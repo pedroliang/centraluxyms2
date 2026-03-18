@@ -1,0 +1,105 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppLayout } from "@/components/AppLayout";
+import { ProductGrid } from "@/components/ProductGrid";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useProcessStore } from "@/stores/processStore";
+import { Process, ProcessType } from "@/types/process";
+import { ArrowLeft, Save } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export default function NewProcess() {
+  const navigate = useNavigate();
+  const { addProcess } = useProcessStore();
+
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [type, setType] = useState<ProcessType>("unloading");
+
+  const processId = crypto.randomUUID();
+
+  const handleSave = () => {
+    if (!name.trim() || !code.trim()) return;
+    const process: Process = {
+      id: processId,
+      name: name.trim(),
+      code: code.trim().toUpperCase(),
+      date,
+      type,
+      status: "active",
+      products: [],
+      createdAt: new Date().toISOString(),
+    };
+    addProcess(process);
+    navigate(`/processo/${processId}`);
+  };
+
+  return (
+    <AppLayout>
+      <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm px-6 py-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-semibold tracking-heading text-foreground">Novo Processo</h1>
+        </div>
+      </div>
+
+      <div className="p-6 max-w-2xl">
+        <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Nome do Processo</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Carga Galpão Norte" className="bg-background" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</label>
+              <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Ex: CTX-9945" className="bg-background font-mono" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-background tabular-nums" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setType("unloading")}
+                  className={cn(
+                    "flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+                    type === "unloading" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                  )}
+                >
+                  Descarga
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("loading")}
+                  className={cn(
+                    "flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+                    type === "loading" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                  )}
+                >
+                  Carregamento
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <Button onClick={handleSave} disabled={!name.trim() || !code.trim()}>
+              <Save className="h-4 w-4 mr-1.5" />
+              Criar Processo
+            </Button>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
