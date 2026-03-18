@@ -30,12 +30,14 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     setQtyPerBox(""); setLote(""); setCubVol(""); setIsManual(false); setAutoFilled(false);
   };
 
-  const handleSelectProduct = (product: { code: string; description: string; cubagem?: any; lote?: string; qtyPerBox?: number }) => {
+  const handleSelectProduct = (product: { code: string; description: string; cubagem?: { x: number; y: number; z: number; peso?: string }; lote?: string; qtyPerBox?: number }) => {
     setCode(product.code);
     setDescription(product.description);
     setLote(product.lote || "");
     setQtyPerBox(product.qtyPerBox?.toString() || "");
-    setCubVol(product.cubagem?.volume?.toString() || "");
+    // Calculate volume from x*y*z
+    const vol = product.cubagem ? Math.round(product.cubagem.x * product.cubagem.y * product.cubagem.z) : 0;
+    setCubVol(vol ? vol.toString() : "");
     setIsManual(false);
     setAutoFilled(true);
   };
