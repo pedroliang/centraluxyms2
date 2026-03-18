@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface ProductSearchResult {
   code: string;
   description: string;
-  cubagem?: { comprimento: number; largura: number; altura: number; volume: number };
+  cubagem?: { x: number; y: number; z: number; peso?: string };
   lote?: string;
   qtyPerBox?: number;
 }
