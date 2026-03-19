@@ -17,7 +17,7 @@ export default function NewProcess() {
   const navigate = useNavigate();
   const { addProcess } = useProcessStore();
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState("Carreta");
   const [code, setCode] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [type, setType] = useState<ProcessType>("unloading");
