@@ -60,10 +60,13 @@ export default function NewProcess() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Nome do Processo</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Carga Galpão Norte" className="bg-background" />
+              <select value={name} onChange={(e) => setName(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="Carreta">Carreta</option>
+                <option value="Contêiner">Contêiner</option>
+              </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</label>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Processo/Código</label>
               <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Ex: CTX-9945" className="bg-background font-mono" />
             </div>
           </div>
