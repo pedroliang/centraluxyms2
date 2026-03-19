@@ -21,6 +21,8 @@ export default function NewProcess() {
   const [code, setCode] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [type, setType] = useState<ProcessType>("unloading");
+  const [origin, setOrigin] = useState("Brasília");
+  const [destination, setDestination] = useState("São Paulo");
 
   const processId = crypto.randomUUID();
 
@@ -32,6 +34,8 @@ export default function NewProcess() {
       code: code.trim().toUpperCase(),
       date: format(date, "yyyy-MM-dd"),
       type,
+      origin,
+      destination,
       status: "active",
       products: [],
       createdAt: new Date().toISOString(),
@@ -61,6 +65,25 @@ export default function NewProcess() {
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</label>
               <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Ex: CTX-9945" className="bg-background font-mono" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Origem</label>
+              <select value={origin} onChange={(e) => setOrigin(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="Brasília">Brasília</option>
+                <option value="São Paulo">São Paulo</option>
+                <option value="Porto">Porto</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Destino</label>
+              <select value={destination} onChange={(e) => setDestination(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="Brasília">Brasília</option>
+                <option value="São Paulo">São Paulo</option>
+                <option value="Porto">Porto</option>
+              </select>
             </div>
           </div>
 

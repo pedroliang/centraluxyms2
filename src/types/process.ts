@@ -28,6 +28,8 @@ export interface Process {
   date: string;
   type: ProcessType;
   status: ProcessStatus;
+  origin: string;
+  destination: string;
   products: Product[];
   createdAt: string;
 }

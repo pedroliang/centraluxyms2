@@ -1,7 +1,7 @@
 import React from "react";
 import { Process, ProcessStatus } from "@/types/process";
 import { cn } from "@/lib/utils";
-import { Truck, Package, Calendar, ArrowRight } from "lucide-react";
+import { Truck, Package, Calendar, ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const statusConfig: Record<ProcessStatus, { label: string; className: string }> = {
@@ -50,7 +50,14 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
         </div>
 
         {/* Meta */}
-        <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="mt-2.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5" />
+          <span className="font-medium">{process.origin || "Indefinida"}</span>
+          <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
+          <span className="font-medium">{process.destination || "Indefinida"}</span>
+        </div>
+
+        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             {process.type === "loading" ? <Truck className="h-3.5 w-3.5" /> : <Package className="h-3.5 w-3.5" />}
             {process.type === "loading" ? "Carregamento" : "Descarga"}
