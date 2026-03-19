@@ -48,7 +48,7 @@ export default function Dashboard() {
     
     const html = `
       <!DOCTYPE html>
-      <html><head><title>Romaneio - Centralux YMS</title>
+      <html><head><title>Impressão - Centralux YMS</title>
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
@@ -61,12 +61,12 @@ export default function Dashboard() {
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
         @media print { body { margin: 20px; } }
       </style></head><body>
-      <h1>CENTRALUX YMS — Romaneio</h1>
+      <h1>CENTRALUX YMS</h1>
       <p style="font-size:12px;color:#666;">Impresso em: ${new Date().toLocaleString("pt-BR")}</p>
       ${toPrint.map(p => `
         <div class="process">
           <div class="process-header">
-            <span class="code">${p.code}</span> — ${p.name}
+            <span style="font-weight:600;">${p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
             <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
           </div>
           <table>
