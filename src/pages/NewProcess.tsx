@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProcessStore } from "@/stores/processStore";
 import { Process, ProcessType } from "@/types/process";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 export default function NewProcess() {
@@ -15,7 +19,7 @@ export default function NewProcess() {
 
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState<Date>(new Date());
   const [type, setType] = useState<ProcessType>("unloading");
 
   const processId = crypto.randomUUID();
@@ -26,7 +30,7 @@ export default function NewProcess() {
       id: processId,
       name: name.trim(),
       code: code.trim().toUpperCase(),
-      date,
+      date: format(date, "yyyy-MM-dd"),
       type,
       status: "active",
       products: [],
@@ -63,7 +67,29 @@ export default function NewProcess() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-background tabular-nums" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-background text-foreground border-input",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "dd/MM/yyyy") : <span>Selecione a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(d) => d && setDate(d)}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</label>

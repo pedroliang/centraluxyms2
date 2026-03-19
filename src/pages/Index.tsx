@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package, Loader2 } from "lucide-react";
+import { Plus, Search, CalendarIcon, Printer, Package, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const { processes, fetchProcesses, isLoading } = useProcessStore();
+  const { processes, fetchProcesses, isLoading, deleteProcess } = useProcessStore();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
@@ -94,6 +94,15 @@ export default function Dashboard() {
     printWindow.print();
   };
 
+  const handleDeleteSelected = async () => {
+    if (window.confirm(`Tem certeza que deseja excluir ${selectedIds.length} processo(s)?`)) {
+      for (const id of selectedIds) {
+        await deleteProcess(id);
+      }
+      setSelectedIds([]);
+    }
+  };
+
   const dateLabel = () => {
     if (dateRange.from && dateRange.to) {
       return `${format(dateRange.from, "dd/MM/yy")} — ${format(dateRange.to, "dd/MM/yy")}`;
@@ -154,10 +163,16 @@ export default function Dashboard() {
           </Popover>
 
           {selectedIds.length > 0 && (
-            <Button variant="outline" onClick={handlePrint} className="gap-2">
-              <Printer className="h-4 w-4" />
-              Imprimir ({selectedIds.length})
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={handleDeleteSelected} className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Excluir ({selectedIds.length})
+              </Button>
+              <Button variant="outline" onClick={handlePrint} className="gap-2">
+                <Printer className="h-4 w-4" />
+                Imprimir ({selectedIds.length})
+              </Button>
+            </div>
           )}
         </div>
       </div>
