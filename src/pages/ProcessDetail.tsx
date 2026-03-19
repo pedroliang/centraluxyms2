@@ -54,19 +54,6 @@ export default function ProcessDetail() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {process.status !== "completed" && (
-              <Button 
-                onClick={() => {
-                  updateProcess(process.id, { status: "completed" });
-                  toast.success("Processo marcado como FINALIZADO!");
-                  navigate("/");
-                }} 
-                className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Finalizar Processo
-              </Button>
-            )}
             
             {/* Status toggle */}
             <div className="flex rounded-md border border-border overflow-hidden">
@@ -93,21 +80,15 @@ export default function ProcessDetail() {
       <div className="p-6 flex flex-col min-h-[50vh]">
         <ProductGrid processId={process.id} products={process.products} />
         
-        {process.status !== "completed" && (
-          <div className="mt-8 flex justify-end mt-auto pt-8 border-t border-border/50">
-            <Button 
-              onClick={() => {
-                updateProcess(process.id, { status: "completed" });
-                toast.success("Processo finalizado com sucesso!");
-                navigate("/");
-              }} 
-              className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md h-12 px-8 text-base"
-            >
-              <CheckCircle className="mr-2 h-5 w-5" />
-              PRONTO! (Finalizar Processo)
-            </Button>
-          </div>
-        )}
+        <div className="mt-8 flex justify-end mt-auto pt-8 border-t border-border/50">
+          <Button 
+            onClick={() => navigate("/")} 
+            className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md h-12 px-8 text-base"
+          >
+            <CheckCircle className="mr-2 h-5 w-5" />
+            CONCLUIR CADASTRO
+          </Button>
+        </div>
       </div>
     </AppLayout>
   );
