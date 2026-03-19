@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package, Loader2, Trash2, Edit } from "lucide-react";
+import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,74 @@ export default function Dashboard() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleGeneratePDF = () => {
+    const toPrint = processes.filter((p) => selectedIds.includes(p.id));
+    const pdfWindow = window.open("", "_blank");
+    if (!pdfWindow) return;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html><head><title>Gerando PDF...</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+      <style>
+        body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
+        h1 { font-size: 18px; margin-bottom: 8px; }
+        .process { margin-bottom: 32px; page-break-inside: avoid; }
+        .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
+        .code { font-family: monospace; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+      </style></head><body>
+      <div id="pdf-content">
+        <h1>CENTRALUX YMS</h1>
+        <p style="font-size:12px;color:#666;">Gerado em: ${new Date().toLocaleString("pt-BR")}</p>
+        ${toPrint.map(p => `
+          <div class="process">
+            <div class="process-header">
+              <span style="font-weight:600;">${p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
+              <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
+            </div>
+            <table>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Unit.</th><th>Caixas</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+              <tbody>
+                ${p.products.map(prod => `
+                  <tr>
+                    <td class="code">${prod.code}</td>
+                    <td>${prod.description}</td>
+                    <td class="num">${prod.qtyUnit}</td>
+                    <td class="num">${prod.qtyBoxes}</td>
+                    <td class="num">${prod.qtyPerBox}</td>
+                    <td>${prod.lote || "—"}</td>
+                    <td class="num">${prod.cubagem?.volume || "—"}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `).join("")}
+      </div>
+      <script>
+        window.onload = function() {
+          var element = document.getElementById('pdf-content');
+          html2pdf(element, {
+            margin:       10,
+            filename:     'Centralux_Processos_' + new Date().getTime() + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).then(function() {
+            setTimeout(() => window.close(), 500);
+          });
+        };
+      </script>
+      </body></html>
+    `;
+    pdfWindow.document.write(html);
+    pdfWindow.document.close();
   };
 
   const handlePrint = () => {
@@ -174,6 +242,10 @@ export default function Dashboard() {
               <Button variant="destructive" onClick={handleDeleteSelected} className="gap-2">
                 <Trash2 className="h-4 w-4" />
                 Excluir ({selectedIds.length})
+              </Button>
+              <Button variant="outline" onClick={handleGeneratePDF} className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+                <FileText className="h-4 w-4" />
+                Gerar PDF ({selectedIds.length})
               </Button>
               <Button variant="outline" onClick={handlePrint} className="gap-2">
                 <Printer className="h-4 w-4" />
