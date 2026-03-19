@@ -62,8 +62,12 @@ export default function Dashboard() {
         .code { font-family: monospace; font-weight: 600; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: 600; }
+        th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .status-badge { padding: 2px 6px; borderRadius: 4px; fontSize: 10px; fontWeight: 600; }
+        .status-active { background: #eef2ff !important; color: #2563eb !important; }
+        .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       </style></head><body>
       <div id="pdf-content">
         <h1>CENTRALUX YMS</h1>
@@ -73,9 +77,12 @@ export default function Dashboard() {
           const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
           return `
           <div class="process">
-            <div class="process-header">
-              <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
-              <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
+            <div class="process-header" style="border-bottom: 2px solid #2563eb;">
+              <span style="font-weight:600; color: #1a1a2e;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code" style="color: #2563eb;">${p.code}</span>
+              <span style="float:right;font-size:12px;">
+                ${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | 
+                <span class="status-badge ${p.status === 'active' ? 'status-active' : 'status-completed'}">${p.status.toUpperCase()}</span>
+              </span>
             </div>
             <table>
               <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
@@ -92,7 +99,7 @@ export default function Dashboard() {
                     ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
                     <td class="num">${prod.qtyPerBox}</td>
                     <td>${prod.lote || "—"}</td>
-                    <td class="num">${prod.cubagem?.volume || "—"}</td>
+                    <td class="num">${prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -137,9 +144,15 @@ export default function Dashboard() {
         .code { font-family: monospace; font-weight: 600; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: 600; }
+        th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
-        @media print { body { margin: 20px; } }
+        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .status-active { background: #eef2ff !important; color: #2563eb !important; }
+        .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
+        @media print { 
+          body { margin: 20px; } 
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
       </style></head><body>
       <h1>CENTRALUX YMS</h1>
       <p style="font-size:12px;color:#666;">Impresso em: ${new Date().toLocaleString("pt-BR")}</p>
@@ -148,9 +161,12 @@ export default function Dashboard() {
         const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
         return `
         <div class="process">
-          <div class="process-header">
-            <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
-            <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
+          <div class="process-header" style="border-bottom: 2px solid #2563eb;">
+            <span style="font-weight:600; color: #1a1a2e;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code" style="color: #2563eb;">${p.code}</span>
+            <span style="float:right;font-size:12px;">
+              ${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | 
+              <span class="status-badge ${p.status === 'active' ? 'status-active' : 'status-completed'}">${p.status.toUpperCase()}</span>
+            </span>
           </div>
           <table>
             <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
@@ -167,7 +183,7 @@ export default function Dashboard() {
                   ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
                   <td class="num">${prod.qtyPerBox}</td>
                   <td>${prod.lote || "—"}</td>
-                  <td class="num">${prod.cubagem?.volume || "—"}</td>
+                  <td class="num">${prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
                 </tr>
               `).join("")}
             </tbody>

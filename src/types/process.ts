@@ -6,6 +6,7 @@ export interface Cubagem {
   largura: number;
   altura: number;
   volume: number;
+  unitVolume?: number;
 }
 
 export interface Product {

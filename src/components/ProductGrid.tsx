@@ -3,7 +3,7 @@ import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
 import { SmartCodeInput } from "./SmartCodeInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit3 } from "lucide-react";
+import { Plus, Trash2, Edit3, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProductGridProps {
@@ -28,6 +28,20 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [cubVol, setCubVol] = useState("");
   const [isManual, setIsManual] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
+  const [baseUnitVol, setBaseUnitVol] = useState(0);
+
+  // Sync volume when quantities change in Add Form
+  React.useEffect(() => {
+    const boxes = (parseFloat(qtyBoxesSP) || 0) + (parseFloat(qtyBoxesDF) || 0);
+    if (baseUnitVol > 0 && boxes > 0) {
+      setCubVol((baseUnitVol * boxes).toFixed(3).replace(".", ","));
+      // Also update total qtyBoxes if it's not manually set or to keep it in sync
+      setQtyBoxes(boxes.toString());
+    } else if (baseUnitVol > 0 && parseFloat(qtyBoxes) > 0) {
+      // If only total boxes is set
+      setCubVol((baseUnitVol * parseFloat(qtyBoxes)).toFixed(3).replace(".", ","));
+    }
+  }, [qtyBoxesSP, qtyBoxesDF, qtyBoxes, baseUnitVol]);
 
   const handleQtyUnitChange = (val: string) => {
     setQtyUnit(val);
@@ -85,9 +99,12 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     setDescription(product.description);
     setLote(product.lote || "");
     setQtyPerBox(product.qtyPerBox?.toString() || "");
-    // Calculate volume from x*y*z
-    const vol = product.cubagem ? Math.round(product.cubagem.x * product.cubagem.y * product.cubagem.z) : 0;
-    setCubVol(vol ? vol.toString() : "");
+    // Base unit volume (X*Y*Z / 1,000,000)
+    const unitVol = product.cubagem ? (product.cubagem.x * product.cubagem.y * product.cubagem.z) / 1000000 : 0;
+    setBaseUnitVol(unitVol);
+    // Initial volume calculation (will be updated by useEffect)
+    const initialBoxes = (parseFloat(qtyBoxesSP) || 0) + (parseFloat(qtyBoxesDF) || 0) || parseFloat(qtyBoxes) || 0;
+    setCubVol(unitVol && initialBoxes ? (unitVol * initialBoxes).toFixed(3).replace(".", ",") : (unitVol ? unitVol.toFixed(3).replace(".", ",") : ""));
     setIsManual(false);
     setAutoFilled(true);
   };
@@ -105,7 +122,13 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       qtyUnitDF: Number(qtyUnitDF) || 0,
       qtyBoxesSP: Number(qtyBoxesSP) || 0,
       qtyBoxesDF: Number(qtyBoxesDF) || 0,
-      cubagem: cubVol ? { comprimento: 0, largura: 0, altura: 0, volume: Number(cubVol) } : undefined,
+      cubagem: cubVol ? { 
+        comprimento: baseUnitVol > 0 ? 1 : 0, // Placeholder but indicates we have dimensions
+        largura: 0, 
+        altura: 0, 
+        volume: Number(cubVol),
+        unitVolume: baseUnitVol // We'll add this to the type or metadata
+      } : undefined,
       lote: lote || undefined,
       isManual,
       isOverridden: false,
@@ -136,6 +159,18 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
         if (prod.qtyUnit) updates.qtyBoxes = Number((prod.qtyUnit / perBox).toFixed(4));
         if (prod.qtyUnitSP) updates.qtyBoxesSP = Number((prod.qtyUnitSP / perBox).toFixed(4));
         if (prod.qtyUnitDF) updates.qtyBoxesDF = Number((prod.qtyUnitDF / perBox).toFixed(4));
+      }
+    }
+
+    // Recalculate volume if quantity changes
+    if (prod.cubagem?.unitVolume) {
+      const currentSP = field === "qtyBoxesSP" ? num : (prod.qtyBoxesSP || 0);
+      const currentDF = field === "qtyBoxesDF" ? num : (prod.qtyBoxesDF || 0);
+      const currentTotal = field === "qtyBoxes" ? num : (prod.qtyBoxes || 0);
+      
+      const boxes = (currentSP + currentDF) || currentTotal;
+      if (boxes >= 0) {
+        updates.cubagem = { ...prod.cubagem, volume: prod.cubagem.unitVolume * boxes };
       }
     }
 
@@ -260,13 +295,24 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                   )}
                 >
                   <td className="px-4 py-2.5 font-mono font-semibold text-foreground">{prod.code}</td>
-                  <td className="px-4 py-2.5 text-foreground max-w-[150px] truncate" title={prod.description}>{prod.description}</td>
+                  <td className="px-4 py-2.5 text-foreground max-w-[150px] truncate" title={prod.description}>
+                    {editingId === prod.id ? (
+                      <input
+                        type="text"
+                        defaultValue={prod.description}
+                        onBlur={(e) => updateProduct(processId, prod.id, { description: e.target.value, isOverridden: true })}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
+                        className="w-full rounded border border-input bg-background px-1 py-0.5 text-sm"
+                      />
+                    ) : prod.description}
+                  </td>
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium">
                     {editingId === prod.id ? (
                       <input
                         type="number"
                         defaultValue={prod.qtyUnit}
                         onBlur={(e) => handleInlineUpdate(prod, "qtyUnit", e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
                         className="w-14 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                         autoFocus
                       />
@@ -275,14 +321,14 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                   {hasSP && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                       {editingId === prod.id ? (
-                        <input type="number" defaultValue={prod.qtyUnitSP} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitSP", e.target.value)} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
+                        <input type="number" defaultValue={prod.qtyUnitSP} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitSP", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyUnitSP || "—")}
                     </td>
                   )}
                   {hasDF && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                       {editingId === prod.id ? (
-                        <input type="number" defaultValue={prod.qtyUnitDF} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitDF", e.target.value)} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
+                        <input type="number" defaultValue={prod.qtyUnitDF} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitDF", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyUnitDF || "—")}
                     </td>
                   )}
@@ -292,6 +338,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                         type="number"
                         defaultValue={prod.qtyBoxes}
                         onBlur={(e) => handleInlineUpdate(prod, "qtyBoxes", e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
                         className="w-14 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                       />
                     ) : prod.qtyBoxes}
@@ -299,14 +346,14 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                   {hasSP && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                       {editingId === prod.id ? (
-                        <input type="number" defaultValue={prod.qtyBoxesSP} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesSP", e.target.value)} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
+                        <input type="number" defaultValue={prod.qtyBoxesSP} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesSP", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyBoxesSP || "—")}
                     </td>
                   )}
                   {hasDF && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                       {editingId === prod.id ? (
-                        <input type="number" defaultValue={prod.qtyBoxesDF} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesDF", e.target.value)} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
+                        <input type="number" defaultValue={prod.qtyBoxesDF} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesDF", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyBoxesDF || "—")}
                     </td>
                   )}
@@ -316,23 +363,45 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                         type="number"
                         defaultValue={prod.qtyPerBox}
                         onBlur={(e) => handleInlineUpdate(prod, "qtyPerBox", e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
                         className="w-16 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                       />
                     ) : prod.qtyPerBox}
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{prod.lote || "—"}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{prod.cubagem?.volume || "—"}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {editingId === prod.id ? (
+                      <input
+                        type="text"
+                        defaultValue={prod.lote}
+                        onBlur={(e) => updateProduct(processId, prod.id, { lote: e.target.value, isOverridden: true })}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
+                        className="w-20 rounded border border-input bg-background px-1 py-0.5 text-sm"
+                      />
+                    ) : (prod.lote || "—")}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => setEditingId(editingId === prod.id ? null : prod.id)}
-                        className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        className={cn(
+                          "rounded p-1 transition-colors",
+                          editingId === prod.id 
+                            ? "text-green-600 bg-green-50 hover:bg-green-100" 
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        )}
+                        title={editingId === prod.id ? "Salvar" : "Editar"}
                       >
-                        <Edit3 className="h-3.5 w-3.5" />
+                        {editingId === prod.id ? <Check className="h-3.5 w-3.5" /> : <Edit3 className="h-3.5 w-3.5" />}
                       </button>
                       <button
-                        onClick={() => removeProduct(processId, prod.id)}
+                        onClick={() => {
+                          if (window.confirm("Tem certeza que deseja excluir este item?")) {
+                            removeProduct(processId, prod.id);
+                          }
+                        }}
                         className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Excluir produto"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -352,7 +421,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 {hasDF && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>}
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? totalVolume : "—"}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? totalVolume.toFixed(3).replace(".", ",") : "—"}</td>
                 <td className="px-4 py-2.5"></td>
               </tr>
             </tfoot>
