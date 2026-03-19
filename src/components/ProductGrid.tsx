@@ -173,12 +173,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   React.useEffect(() => {
     const boxes = (parseFloat(qtyBoxesSP) || 0) + (parseFloat(qtyBoxesDF) || 0);
     if (baseUnitVol > 0 && boxes > 0) {
-      setCubVol((baseUnitVol * boxes).toFixed(3).replace(".", ","));
+      setCubVol(((baseUnitVol * boxes) / 1000).toFixed(2).replace(".", ","));
       // Also update total qtyBoxes if it's not manually set or to keep it in sync
       setQtyBoxes(boxes.toString());
     } else if (baseUnitVol > 0 && parseFloat(qtyBoxes) > 0) {
-      // If only total boxes is set
-      setCubVol((baseUnitVol * parseFloat(qtyBoxes)).toFixed(3).replace(".", ","));
+      setCubVol(((baseUnitVol * parseFloat(qtyBoxes)) / 1000).toFixed(2).replace(".", ","));
     }
   }, [qtyBoxesSP, qtyBoxesDF, qtyBoxes, baseUnitVol]);
 
@@ -578,7 +577,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       />
                     ) : (prod.lote || "—")}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1">
                       <button
@@ -620,7 +619,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 {hasDF && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>}
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? totalVolume.toFixed(3).replace(".", ",") : "—"}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? (totalVolume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                 <td className="px-4 py-2.5"></td>
               </tr>
             </tfoot>
