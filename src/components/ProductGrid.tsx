@@ -3,8 +3,11 @@ import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
 import { SmartCodeInput } from "./SmartCodeInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit3, Check } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, FileUp, Image as ImageIcon, Download, Loader2 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { createWorker } from "tesseract.js";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProductGridProps {
   processId: string;
@@ -29,6 +32,122 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [isManual, setIsManual] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [baseUnitVol, setBaseUnitVol] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { "Código": "1234", "Descrição": "Exemplo", "Qtd Total": 10, "Qtd/Cx": 5, "Lote": "L123" }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Modelo");
+    XLSX.writeFile(wb, "Modelo_Importacao_Centralux.xlsx");
+    toast.success("Modelo baixado com sucesso!");
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsProcessing(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+        
+        let count = 0;
+        for (const row of data) {
+          const code = (row["Código"] || row["Codigo"] || row["code"] || "").toString().trim();
+          if (!code) continue;
+          
+          const description = row["Descrição"] || row["Descricao"] || row["description"] || "Importado";
+          const qtyUnit = Number(row["Qtd Total"] || row["Quantidade"] || row["qty"] || 0);
+          const qtyPerBox = Number(row["Qtd/Cx"] || row["Por Caixa"] || 0);
+          const lote = row["Lote"] || row["Batch"] || "";
+          
+          const newProd: Product = {
+            id: crypto.randomUUID(),
+            code,
+            description,
+            qtyUnit,
+            qtyBoxes: qtyPerBox > 0 ? Number((qtyUnit / qtyPerBox).toFixed(4)) : 0,
+            qtyPerBox,
+            isManual: true, // Mark as manual if imported from arbitrary excel
+            isOverridden: false,
+            lote: lote || undefined
+          };
+          addProduct(processId, newProd);
+          count++;
+        }
+        toast.success(`${count} produtos importados com sucesso!`);
+      } catch (err) {
+        toast.error("Erro ao processar Excel");
+      } finally {
+        setIsProcessing(false);
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsProcessing(true);
+    toast.info("Analisando imagem... isso pode levar alguns segundos.");
+    
+    try {
+      const worker = await createWorker('por');
+      const ret = await worker.recognize(file);
+      const text = ret.data.text;
+      await worker.terminate();
+      
+      // Regex search for context (numbers of 4+ digits often codes)
+      // and quantities like "Qtd: 10" or "X 10"
+      const lines = text.split("\n");
+      let foundCount = 0;
+      
+      lines.forEach(line => {
+        // Look for 4-digit codes potentially preceded by title
+        const codeMatch = line.match(/\b(\d{4,})\b/);
+        if (codeMatch) {
+          const code = codeMatch[1];
+          // Try to find a quantity in the same line or nearby
+          const qtyMatch = line.match(/(?:Qtd|Qt|x)\s*[:]?\s*(\d+)/i) || line.match(/(\d+)\s*(?:un|pç|pc)/i);
+          const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
+          
+          // Add if it looks like a code we don't have yet in this batch
+          const newProd: Product = {
+            id: crypto.randomUUID(),
+            code,
+            description: "Detectado via OCR",
+            qtyUnit: qty,
+            qtyBoxes: 0,
+            qtyPerBox: 0,
+            isManual: true,
+            isOverridden: false
+          };
+          addProduct(processId, newProd);
+          foundCount++;
+        }
+      });
+      
+      if (foundCount > 0) {
+        toast.success(`Detectado ${foundCount} possíveis itens na imagem.`);
+      } else {
+        toast.warning("Nenhum código de produto claro identificado na imagem.");
+      }
+    } catch (err) {
+      toast.error("Erro no OCR: " + (err as any).message);
+    } finally {
+      setIsProcessing(false);
+      e.target.value = "";
+    }
+  };
 
   // Sync volume when quantities change in Add Form
   React.useEffect(() => {
@@ -190,6 +309,66 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
 
   return (
     <div>
+      {/* Automate imports */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 animate-fade-in">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Importação Automática
+          </h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Agilize o processo importando dados de arquivos ou imagens.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/10 text-primary transition-all active:scale-95"
+            onClick={downloadTemplate}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Modelo Excel
+          </Button>
+          
+          <label className="relative">
+            <input
+              type="file"
+              accept=".xlsx, .xls, .csv"
+              onChange={handleImportExcel}
+              disabled={isProcessing}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={isProcessing}
+              className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/10 text-primary transition-all active:scale-95"
+            >
+              {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
+              Importar Excel
+            </Button>
+          </label>
+
+          <label className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleOCR}
+              disabled={isProcessing}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={isProcessing}
+              className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/10 text-primary transition-all active:scale-95"
+            >
+              {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
+              Analisar Print (OCR)
+            </Button>
+          </label>
+        </div>
+      </div>
+
       {/* Add product form */}
       <div className="rounded-lg border border-border bg-card p-4 shadow-card mb-4">
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Adicionar Produto</h3>
