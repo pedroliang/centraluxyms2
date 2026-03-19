@@ -2,8 +2,11 @@ import { create } from "zustand";
 import { Process, Product } from "@/types/process";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner"; // Usando a biblioteca já configurada em App.tsx
+import { fetchGoogleSheetProducts, ProductDBEntry } from "@/lib/googleSheets";
 
 interface ProcessStore {
+  productDatabase: Record<string, ProductDBEntry>;
+  searchProducts: (query: string) => (ProductDBEntry & { code: string })[];
   processes: Process[];
   isLoading: boolean;
   fetchProcesses: () => Promise<void>;
@@ -16,11 +19,25 @@ interface ProcessStore {
 }
 
 export const useProcessStore = create<ProcessStore>((set, get) => ({
+  productDatabase: {},
+  searchProducts: (query: string) => {
+    const db = get().productDatabase;
+    const q = query.toUpperCase().trim();
+    if (q.length < 2) return [];
+    return Object.entries(db)
+      .filter(([code, data]) => code.includes(q) || data.description.toUpperCase().includes(q))
+      .slice(0, 15)
+      .map(([code, data]) => ({ code, ...data }));
+  },
   processes: [],
   isLoading: false,
 
   fetchProcesses: async () => {
     set({ isLoading: true });
+    
+    // Fetch google sheets first in background
+    fetchGoogleSheetProducts().then((db) => set({ productDatabase: db }));
+
     const { data: processesData, error: processError } = await supabase
       .from("processes")
       .select("*")

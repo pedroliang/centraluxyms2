@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { searchProducts } from "@/data/mockData";
+import { useProcessStore } from "@/stores/processStore";
 import { cn } from "@/lib/utils";
 
 interface ProductSearchResult {
@@ -18,6 +18,7 @@ interface SmartCodeInputProps {
 }
 
 export function SmartCodeInput({ value, onChange, onSelect, placeholder = "Código do produto..." }: SmartCodeInputProps) {
+  const searchProducts = useProcessStore((state) => state.searchProducts);
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<ProductSearchResult[]>([]);
   const ref = useRef<HTMLDivElement>(null);
