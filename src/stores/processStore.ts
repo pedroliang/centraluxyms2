@@ -41,6 +41,7 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
     const { data: processesData, error: processError } = await supabase
       .from("processes")
       .select("*")
+      .order("date", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (processError) {
