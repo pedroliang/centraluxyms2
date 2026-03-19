@@ -90,8 +90,24 @@ export default function ProcessDetail() {
       </div>
 
       {/* Product Grid */}
-      <div className="p-6">
+      <div className="p-6 flex flex-col min-h-[50vh]">
         <ProductGrid processId={process.id} products={process.products} />
+        
+        {process.status !== "completed" && (
+          <div className="mt-8 flex justify-end mt-auto pt-8 border-t border-border/50">
+            <Button 
+              onClick={() => {
+                updateProcess(process.id, { status: "completed" });
+                toast.success("Processo finalizado com sucesso!");
+                navigate("/");
+              }} 
+              className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md h-12 px-8 text-base"
+            >
+              <CheckCircle className="mr-2 h-5 w-5" />
+              PRONTO! (Finalizar Processo)
+            </Button>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
