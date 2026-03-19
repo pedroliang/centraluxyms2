@@ -15,6 +15,10 @@ export interface Product {
   qtyUnit: number;
   qtyBoxes: number;
   qtyPerBox: number;
+  qtyUnitSP?: number;
+  qtyUnitDF?: number;
+  qtyBoxesSP?: number;
+  qtyBoxesDF?: number;
   cubagem?: Cubagem;
   lote?: string;
   isManual: boolean;

@@ -117,8 +117,29 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   // Inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleInlineUpdate = (productId: string, field: keyof Product, value: any) => {
-    updateProduct(processId, productId, { [field]: value, isOverridden: true });
+  const handleInlineUpdate = (prod: Product, field: keyof Product, value: any) => {
+    const num = Number(value);
+    if (isNaN(num)) return;
+    const updates: Partial<Product> = { [field]: num, isOverridden: true };
+
+    const perBox = field === "qtyPerBox" ? num : prod.qtyPerBox;
+
+    if (perBox > 0) {
+      if (field === "qtyUnit") updates.qtyBoxes = Number((num / perBox).toFixed(4));
+      if (field === "qtyBoxes") updates.qtyUnit = Number((num * perBox).toFixed(4));
+      if (field === "qtyUnitSP") updates.qtyBoxesSP = Number((num / perBox).toFixed(4));
+      if (field === "qtyBoxesSP") updates.qtyUnitSP = Number((num * perBox).toFixed(4));
+      if (field === "qtyUnitDF") updates.qtyBoxesDF = Number((num / perBox).toFixed(4));
+      if (field === "qtyBoxesDF") updates.qtyUnitDF = Number((num * perBox).toFixed(4));
+      
+      if (field === "qtyPerBox") {
+        if (prod.qtyUnit) updates.qtyBoxes = Number((prod.qtyUnit / perBox).toFixed(4));
+        if (prod.qtyUnitSP) updates.qtyBoxesSP = Number((prod.qtyUnitSP / perBox).toFixed(4));
+        if (prod.qtyUnitDF) updates.qtyBoxesDF = Number((prod.qtyUnitDF / perBox).toFixed(4));
+      }
+    }
+
+    updateProduct(processId, prod.id, updates);
   };
 
   const totalQtyUnit = products.reduce((sum, p) => sum + (p.qtyUnit || 0), 0);
@@ -160,24 +181,24 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
             <input type="number" value={qtyUnit} onChange={(e) => handleQtyUnitChange(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="w-16 shrink-0">
-            <label className="mb-1 block text-[11px] text-primary truncate" title="Qtd. Unit SP">Unt.SP</label>
-            <input type="number" value={qtyUnitSP} onChange={(e) => setQtyUnitSP(e.target.value)} className="h-10 w-full rounded-md border border-primary/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-primary" />
+            <label className="mb-1 block text-[11px] text-blue-600 truncate" title="Qtd. Unit SP">Unt.SP</label>
+            <input type="number" value={qtyUnitSP} onChange={(e) => setQtyUnitSP(e.target.value)} className="h-10 w-full rounded-md border border-blue-600/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-blue-600" />
           </div>
           <div className="w-16 shrink-0">
-            <label className="mb-1 block text-[11px] text-primary truncate" title="Qtd. Unit DF">Unt.DF</label>
-            <input type="number" value={qtyUnitDF} onChange={(e) => setQtyUnitDF(e.target.value)} className="h-10 w-full rounded-md border border-primary/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-primary" />
+            <label className="mb-1 block text-[11px] text-orange-500 truncate" title="Qtd. Unit DF">Unt.DF</label>
+            <input type="number" value={qtyUnitDF} onChange={(e) => setQtyUnitDF(e.target.value)} className="h-10 w-full rounded-md border border-orange-500/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-orange-500" />
           </div>
           <div className="w-16 shrink-0">
             <label className="mb-1 block text-[11px] text-muted-foreground truncate" title="Total Caixas">Caixas</label>
             <input type="number" value={qtyBoxes} onChange={(e) => handleQtyBoxesChange(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="w-16 shrink-0">
-            <label className="mb-1 block text-[11px] text-primary truncate" title="Caixas SP">Cx.SP</label>
-            <input type="number" value={qtyBoxesSP} onChange={(e) => setQtyBoxesSP(e.target.value)} className="h-10 w-full rounded-md border border-primary/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-primary" />
+            <label className="mb-1 block text-[11px] text-blue-600 truncate" title="Caixas SP">Cx.SP</label>
+            <input type="number" value={qtyBoxesSP} onChange={(e) => setQtyBoxesSP(e.target.value)} className="h-10 w-full rounded-md border border-blue-600/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-blue-600" />
           </div>
           <div className="w-16 shrink-0">
-            <label className="mb-1 block text-[11px] text-primary truncate" title="Caixas DF">Cx.DF</label>
-            <input type="number" value={qtyBoxesDF} onChange={(e) => setQtyBoxesDF(e.target.value)} className="h-10 w-full rounded-md border border-primary/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-primary" />
+            <label className="mb-1 block text-[11px] text-orange-500 truncate" title="Caixas DF">Cx.DF</label>
+            <input type="number" value={qtyBoxesDF} onChange={(e) => setQtyBoxesDF(e.target.value)} className="h-10 w-full rounded-md border border-orange-500/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-orange-500" />
           </div>
           <div className="w-16 shrink-0">
             <label className="mb-1 block text-[11px] text-muted-foreground truncate" title="Qtd por Caixa">Q/Cx</label>
@@ -214,11 +235,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Descrição</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd Total</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-primary uppercase tracking-wider" title="Qtd. Unit. SP">Unt. SP</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-primary uppercase tracking-wider" title="Qtd. Unit. DF">Unt. DF</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Qtd. Unit. SP">Unt. SP</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Qtd. Unit. DF">Unt. DF</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider" title="Total Caixas">Caixas</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-primary uppercase tracking-wider" title="Caixas SP">Cx. SP</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-primary uppercase tracking-wider" title="Caixas DF">Cx. DF</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Caixas SP">Cx. SP</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Caixas DF">Cx. DF</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd/Cx</th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Lote</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Volume</th>
@@ -242,20 +263,20 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       <input
                         type="number"
                         defaultValue={prod.qtyUnit}
-                        onBlur={(e) => handleInlineUpdate(prod.id, "qtyUnit", Number(e.target.value))}
+                        onBlur={(e) => handleInlineUpdate(prod, "qtyUnit", e.target.value)}
                         className="w-14 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                         autoFocus
                       />
                     ) : prod.qtyUnit}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-primary/80">
+                  <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                     {editingId === prod.id ? (
-                      <input type="number" defaultValue={prod.qtyUnitSP} onBlur={(e) => handleInlineUpdate(prod.id, "qtyUnitSP", Number(e.target.value))} className="w-12 text-right rounded border border-primary/40 text-primary bg-background px-1 py-0.5 text-sm" />
+                      <input type="number" defaultValue={prod.qtyUnitSP} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitSP", e.target.value)} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                     ) : (prod.qtyUnitSP || "—")}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-primary/80">
+                  <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                     {editingId === prod.id ? (
-                      <input type="number" defaultValue={prod.qtyUnitDF} onBlur={(e) => handleInlineUpdate(prod.id, "qtyUnitDF", Number(e.target.value))} className="w-12 text-right rounded border border-primary/40 text-primary bg-background px-1 py-0.5 text-sm" />
+                      <input type="number" defaultValue={prod.qtyUnitDF} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitDF", e.target.value)} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                     ) : (prod.qtyUnitDF || "—")}
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium">
@@ -263,19 +284,19 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       <input
                         type="number"
                         defaultValue={prod.qtyBoxes}
-                        onBlur={(e) => handleInlineUpdate(prod.id, "qtyBoxes", Number(e.target.value))}
+                        onBlur={(e) => handleInlineUpdate(prod, "qtyBoxes", e.target.value)}
                         className="w-14 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                       />
                     ) : prod.qtyBoxes}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-primary/80">
+                  <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                     {editingId === prod.id ? (
-                      <input type="number" defaultValue={prod.qtyBoxesSP} onBlur={(e) => handleInlineUpdate(prod.id, "qtyBoxesSP", Number(e.target.value))} className="w-12 text-right rounded border border-primary/40 text-primary bg-background px-1 py-0.5 text-sm" />
+                      <input type="number" defaultValue={prod.qtyBoxesSP} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesSP", e.target.value)} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                     ) : (prod.qtyBoxesSP || "—")}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-primary/80">
+                  <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                     {editingId === prod.id ? (
-                      <input type="number" defaultValue={prod.qtyBoxesDF} onBlur={(e) => handleInlineUpdate(prod.id, "qtyBoxesDF", Number(e.target.value))} className="w-12 text-right rounded border border-primary/40 text-primary bg-background px-1 py-0.5 text-sm" />
+                      <input type="number" defaultValue={prod.qtyBoxesDF} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesDF", e.target.value)} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                     ) : (prod.qtyBoxesDF || "—")}
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
@@ -283,7 +304,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       <input
                         type="number"
                         defaultValue={prod.qtyPerBox}
-                        onBlur={(e) => handleInlineUpdate(prod.id, "qtyPerBox", Number(e.target.value))}
+                        onBlur={(e) => handleInlineUpdate(prod, "qtyPerBox", e.target.value)}
                         className="w-16 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                       />
                     ) : prod.qtyPerBox}
@@ -313,11 +334,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
               <tr className="border-t-2 border-border bg-muted/50">
                 <td colSpan={2} className="px-4 py-2.5 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyUnit}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-primary">{totalQtyUnitSP}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-primary">{totalQtyUnitDF}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyUnitSP}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyUnitDF}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyBoxes}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-primary">{totalQtyBoxesSP}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-primary">{totalQtyBoxesDF}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyBoxesSP}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? totalVolume : "—"}</td>

@@ -80,6 +80,10 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
           qtyUnit: prod.qty_unit,
           qtyBoxes: prod.qty_boxes,
           qtyPerBox: prod.qty_per_box,
+          qtyUnitSP: prod.qty_unit_sp || 0,
+          qtyUnitDF: prod.qty_unit_df || 0,
+          qtyBoxesSP: prod.qty_boxes_sp || 0,
+          qtyBoxesDF: prod.qty_boxes_df || 0,
           cubagem: prod.cubagem,
           lote: prod.lote,
           isManual: prod.is_manual,
@@ -150,6 +154,10 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       qty_unit: product.qtyUnit,
       qty_boxes: product.qtyBoxes,
       qty_per_box: product.qtyPerBox,
+      qty_unit_sp: product.qtyUnitSP || 0,
+      qty_unit_df: product.qtyUnitDF || 0,
+      qty_boxes_sp: product.qtyBoxesSP || 0,
+      qty_boxes_df: product.qtyBoxesDF || 0,
       cubagem: product.cubagem || null,
       lote: product.lote || null,
       is_manual: product.isManual,
@@ -175,6 +183,10 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
     if (data.qtyUnit !== undefined) dbData.qty_unit = data.qtyUnit;
     if (data.qtyBoxes !== undefined) dbData.qty_boxes = data.qtyBoxes;
     if (data.qtyPerBox !== undefined) dbData.qty_per_box = data.qtyPerBox;
+    if (data.qtyUnitSP !== undefined) dbData.qty_unit_sp = data.qtyUnitSP;
+    if (data.qtyUnitDF !== undefined) dbData.qty_unit_df = data.qtyUnitDF;
+    if (data.qtyBoxesSP !== undefined) dbData.qty_boxes_sp = data.qtyBoxesSP;
+    if (data.qtyBoxesDF !== undefined) dbData.qty_boxes_df = data.qtyBoxesDF;
     if (data.cubagem !== undefined) dbData.cubagem = data.cubagem;
     if (data.lote !== undefined) dbData.lote = data.lote;
     if (data.isManual !== undefined) dbData.is_manual = data.isManual;

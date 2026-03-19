@@ -82,7 +82,10 @@ export default function ProcessDetail() {
         
         <div className="mt-8 flex justify-end mt-auto pt-8 border-t border-border/50">
           <Button 
-            onClick={() => navigate("/")} 
+            onClick={() => {
+              (document.activeElement as HTMLElement)?.blur();
+              setTimeout(() => navigate("/"), 150);
+            }} 
             className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md h-12 px-8 text-base"
           >
             <CheckCircle className="mr-2 h-5 w-5" />

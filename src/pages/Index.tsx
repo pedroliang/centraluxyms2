@@ -74,14 +74,18 @@ export default function Dashboard() {
               <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
             </div>
             <table>
-              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Unit.</th><th>Caixas</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
               <tbody>
                 ${p.products.map(prod => `
                   <tr>
                     <td class="code">${prod.code}</td>
-                    <td>${prod.description}</td>
-                    <td class="num">${prod.qtyUnit}</td>
-                    <td class="num">${prod.qtyBoxes}</td>
+                    <td>${prod.description.length > 30 ? prod.description.substring(0,27) + "..." : prod.description}</td>
+                    <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
+                    <td class="num">${prod.qtyUnitSP || "—"}</td>
+                    <td class="num">${prod.qtyUnitDF || "—"}</td>
+                    <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
+                    <td class="num">${prod.qtyBoxesSP || "—"}</td>
+                    <td class="num">${prod.qtyBoxesDF || "—"}</td>
                     <td class="num">${prod.qtyPerBox}</td>
                     <td>${prod.lote || "—"}</td>
                     <td class="num">${prod.cubagem?.volume || "—"}</td>
