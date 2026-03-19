@@ -307,7 +307,7 @@ License: MIT
         ${g.map(_=>`
           <div class="process">
             <div class="process-header">
-              <span style="font-weight:600;">${_.name}</span> — Processo / Código: <span class="code">${_.code}</span>
+              <span style="font-weight:600;">${_.cliente?_.cliente+" - "+_.name:_.name}</span> — Processo / Código: <span class="code">${_.code}</span>
               <span style="float:right;font-size:12px;">${new Date(_.date).toLocaleDateString("pt-BR")} | ${_.type==="loading"?"Carregamento":"Descarga"} | ${_.status.toUpperCase()}</span>
             </div>
             <table>
@@ -364,7 +364,7 @@ License: MIT
       ${g.map(_=>`
         <div class="process">
           <div class="process-header">
-            <span style="font-weight:600;">${_.name}</span> — Processo / Código: <span class="code">${_.code}</span>
+            <span style="font-weight:600;">${_.cliente?_.cliente+" - "+_.name:_.name}</span> — Processo / Código: <span class="code">${_.code}</span>
             <span style="float:right;font-size:12px;">${new Date(_.date).toLocaleDateString("pt-BR")} | ${_.type==="loading"?"Carregamento":"Descarga"} | ${_.status.toUpperCase()}</span>
           </div>
           <table>
