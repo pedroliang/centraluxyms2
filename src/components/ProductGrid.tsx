@@ -242,7 +242,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       <input
                         type="number"
                         defaultValue={prod.qtyUnit}
-                        onBlur={(e) => { handleInlineUpdate(prod.id, "qtyUnit", Number(e.target.value)); setEditingId(null); }}
+                        onBlur={(e) => handleInlineUpdate(prod.id, "qtyUnit", Number(e.target.value))}
                         className="w-14 text-right rounded border border-input bg-background px-1 py-0.5 text-sm"
                         autoFocus
                       />
