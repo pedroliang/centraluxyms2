@@ -111,20 +111,40 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       const lines = text.split("\n");
       let foundCount = 0;
       
+      // Get product catalog to attempt auto-description
+      const catalog = useProcessStore.getState().productDatabase;
+      
       lines.forEach(line => {
-        // Look for 4-digit codes potentially preceded by title
-        const codeMatch = line.match(/\b(\d{4,})\b/);
+        // Look for codes (3+ digits)
+        const codeMatch = line.match(/\b(\d{3,})\b/);
         if (codeMatch) {
           const code = codeMatch[1];
-          // Try to find a quantity in the same line or nearby
-          const qtyMatch = line.match(/(?:Qtd|Qt|x)\s*[:]?\s*(\d+)/i) || line.match(/(\d+)\s*(?:un|pç|pc)/i);
-          const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
           
-          // Add if it looks like a code we don't have yet in this batch
+          // Improved Quantity Logic: 
+          // 1. Look for explicit prefix: Qtd: 10, X 10, etc.
+          // 2. Look for another number in the same line that is NOT the code
+          const numbers = line.match(/\d+/g) || [];
+          let qty = 1;
+          
+          const explicitQty = line.match(/(?:Qtd|Qt|x)\s*[:]?\s*(\d+)/i);
+          if (explicitQty) {
+            qty = Number(explicitQty[1]);
+          } else if (numbers.length >= 2) {
+            // Find numbers that are NOT the code
+            const candidates = numbers.filter(n => n !== code);
+            if (candidates.length > 0) {
+              // Usually the second number in the line is the quantity
+              qty = Number(candidates[0]);
+            }
+          }
+          
+          // Find description in catalog if possible (catalog is a Record<string, Entry>)
+          const dbItem = catalog[code];
+          
           const newProd: Product = {
             id: crypto.randomUUID(),
             code,
-            description: "Detectado via OCR",
+            description: dbItem?.description || "",
             qtyUnit: qty,
             qtyBoxes: 0,
             qtyPerBox: 0,
