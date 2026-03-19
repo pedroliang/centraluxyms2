@@ -68,25 +68,28 @@ export default function Dashboard() {
       <div id="pdf-content">
         <h1>CENTRALUX YMS</h1>
         <p style="font-size:12px;color:#666;">Gerado em: ${new Date().toLocaleString("pt-BR")}</p>
-        ${toPrint.map(p => `
+        ${toPrint.map(p => {
+          const hasSP = p.products.some(prod => (prod.qtyUnitSP || 0) > 0 || (prod.qtyBoxesSP || 0) > 0);
+          const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
+          return `
           <div class="process">
             <div class="process-header">
               <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
               <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
             </div>
             <table>
-              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
               <tbody>
                 ${p.products.map(prod => `
                   <tr>
                     <td class="code">${prod.code}</td>
                     <td>${prod.description.length > 30 ? prod.description.substring(0,27) + "..." : prod.description}</td>
                     <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
-                    <td class="num">${prod.qtyUnitSP || "—"}</td>
-                    <td class="num">${prod.qtyUnitDF || "—"}</td>
+                    ${hasSP ? `<td class="num">${prod.qtyUnitSP || "—"}</td>` : ''}
+                    ${hasDF ? `<td class="num">${prod.qtyUnitDF || "—"}</td>` : ''}
                     <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
-                    <td class="num">${prod.qtyBoxesSP || "—"}</td>
-                    <td class="num">${prod.qtyBoxesDF || "—"}</td>
+                    ${hasSP ? `<td class="num">${prod.qtyBoxesSP || "—"}</td>` : ''}
+                    ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
                     <td class="num">${prod.qtyPerBox}</td>
                     <td>${prod.lote || "—"}</td>
                     <td class="num">${prod.cubagem?.volume || "—"}</td>
@@ -95,7 +98,7 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-        `).join("")}
+        `}).join("")}
       </div>
       <script>
         window.onload = function() {
@@ -140,21 +143,28 @@ export default function Dashboard() {
       </style></head><body>
       <h1>CENTRALUX YMS</h1>
       <p style="font-size:12px;color:#666;">Impresso em: ${new Date().toLocaleString("pt-BR")}</p>
-      ${toPrint.map(p => `
+      ${toPrint.map(p => {
+        const hasSP = p.products.some(prod => (prod.qtyUnitSP || 0) > 0 || (prod.qtyBoxesSP || 0) > 0);
+        const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
+        return `
         <div class="process">
           <div class="process-header">
             <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
             <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
           </div>
           <table>
-            <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Unit.</th><th>Caixas</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+            <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
             <tbody>
               ${p.products.map(prod => `
                 <tr>
                   <td class="code">${prod.code}</td>
                   <td>${prod.description}</td>
-                  <td class="num">${prod.qtyUnit}</td>
-                  <td class="num">${prod.qtyBoxes}</td>
+                  <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
+                  ${hasSP ? `<td class="num">${prod.qtyUnitSP || "—"}</td>` : ''}
+                  ${hasDF ? `<td class="num">${prod.qtyUnitDF || "—"}</td>` : ''}
+                  <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
+                  ${hasSP ? `<td class="num">${prod.qtyBoxesSP || "—"}</td>` : ''}
+                  ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
                   <td class="num">${prod.qtyPerBox}</td>
                   <td>${prod.lote || "—"}</td>
                   <td class="num">${prod.cubagem?.volume || "—"}</td>
@@ -163,7 +173,7 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
-      `).join("")}
+      `}).join("")}
       </body></html>
     `;
     printWindow.document.write(html);
