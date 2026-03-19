@@ -4,7 +4,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { ProductGrid } from "@/components/ProductGrid";
 import { useProcessStore } from "@/stores/processStore";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const statusOptions = [
@@ -52,7 +53,21 @@ export default function ProcessDetail() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {process.status !== "completed" && (
+              <Button 
+                onClick={() => {
+                  updateProcess(process.id, { status: "completed" });
+                  toast.success("Processo marcado como FINALIZADO!");
+                  navigate("/");
+                }} 
+                className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Finalizar Processo
+              </Button>
+            )}
+            
             {/* Status toggle */}
             <div className="flex rounded-md border border-border overflow-hidden">
               {statusOptions.map((s) => (
