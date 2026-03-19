@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useProcessStore } from "@/stores/processStore";
 import { AppLayout } from "@/components/AppLayout";
 import { ProcessCard } from "@/components/ProcessCard";
@@ -7,16 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package } from "lucide-react";
+import { Plus, Search, CalendarIcon, Printer, Package, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const { processes } = useProcessStore();
+  const { processes, fetchProcesses, isLoading } = useProcessStore();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+
+  useEffect(() => {
+    fetchProcesses();
+  }, [fetchProcesses]);
 
   const filtered = useMemo(() => {
     return processes.filter((p) => {
@@ -160,7 +164,12 @@ export default function Dashboard() {
 
       {/* Process grid */}
       <div className="p-6">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <Loader2 className="h-12 w-12 mb-3 animate-spin opacity-40 text-primary" />
+            <p className="text-sm">Conectando ao banco de dados...</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Package className="h-12 w-12 mb-3 opacity-40" />
             <p className="text-sm">Nenhum processo encontrado.</p>
