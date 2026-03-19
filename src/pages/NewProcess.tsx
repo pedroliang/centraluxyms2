@@ -176,7 +176,12 @@ export default function NewProcess() {
             <Input value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Ex: Mercado Livre" className="bg-background" />
           </div>
 
-          <div className="pt-4 flex justify-end">
+          <div className="pt-4 flex justify-end gap-3">
+            {existingProcess && (
+              <Button type="button" variant="outline" onClick={() => navigate(`/processo/${processId}`)}>
+                Gerenciar Itens
+              </Button>
+            )}
             <Button onClick={handleSave} disabled={!code.trim()}>
               <Save className="h-4 w-4 mr-1.5" />
               {existingProcess ? "Salvar Alterações" : "Criar Processo"}
