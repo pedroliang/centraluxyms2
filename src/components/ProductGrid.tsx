@@ -25,6 +25,51 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [isManual, setIsManual] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
 
+  const handleQtyUnitChange = (val: string) => {
+    setQtyUnit(val);
+    const unit = parseFloat(val);
+    const perBox = parseFloat(qtyPerBox);
+    const boxes = parseFloat(qtyBoxes);
+    
+    if (!isNaN(unit)) {
+      if (!isNaN(perBox) && perBox > 0) {
+        setQtyBoxes(Number((unit / perBox).toFixed(4)).toString());
+      } else if (!isNaN(boxes) && boxes > 0) {
+        setQtyPerBox(Number((unit / boxes).toFixed(4)).toString());
+      }
+    }
+  };
+
+  const handleQtyBoxesChange = (val: string) => {
+    setQtyBoxes(val);
+    const boxes = parseFloat(val);
+    const perBox = parseFloat(qtyPerBox);
+    const unit = parseFloat(qtyUnit);
+    
+    if (!isNaN(boxes)) {
+      if (!isNaN(perBox) && perBox > 0) {
+        setQtyUnit(Number((boxes * perBox).toFixed(4)).toString());
+      } else if (!isNaN(unit) && boxes > 0) {
+        setQtyPerBox(Number((unit / boxes).toFixed(4)).toString());
+      }
+    }
+  };
+
+  const handleQtyPerBoxChange = (val: string) => {
+    setQtyPerBox(val);
+    const perBox = parseFloat(val);
+    const boxes = parseFloat(qtyBoxes);
+    const unit = parseFloat(qtyUnit);
+    
+    if (!isNaN(perBox) && perBox > 0) {
+      if (!isNaN(unit)) {
+        setQtyBoxes(Number((unit / perBox).toFixed(4)).toString());
+      } else if (!isNaN(boxes)) {
+        setQtyUnit(Number((boxes * perBox).toFixed(4)).toString());
+      }
+    }
+  };
+
   const resetForm = () => {
     setCode(""); setDescription(""); setQtyUnit(""); setQtyBoxes("");
     setQtyPerBox(""); setLote(""); setCubVol(""); setIsManual(false); setAutoFilled(false);
@@ -67,6 +112,10 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     updateProduct(processId, productId, { [field]: value, isOverridden: true });
   };
 
+  const totalQtyUnit = products.reduce((sum, p) => sum + (p.qtyUnit || 0), 0);
+  const totalQtyBoxes = products.reduce((sum, p) => sum + (p.qtyBoxes || 0), 0);
+  const totalVolume = products.reduce((sum, p) => sum + (p.cubagem?.volume || 0), 0);
+
   return (
     <div>
       {/* Add product form */}
@@ -95,15 +144,15 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           </div>
           <div className="col-span-1">
             <label className="mb-1 block text-[11px] text-muted-foreground">Qtd Unit.</label>
-            <input type="number" value={qtyUnit} onChange={(e) => setQtyUnit(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+            <input type="number" value={qtyUnit} onChange={(e) => handleQtyUnitChange(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="col-span-1">
             <label className="mb-1 block text-[11px] text-muted-foreground">Caixas</label>
-            <input type="number" value={qtyBoxes} onChange={(e) => setQtyBoxes(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+            <input type="number" value={qtyBoxes} onChange={(e) => handleQtyBoxesChange(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="col-span-1">
             <label className="mb-1 block text-[11px] text-muted-foreground">Qtd/Cx</label>
-            <input type="number" value={qtyPerBox} onChange={(e) => setQtyPerBox(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+            <input type="number" value={qtyPerBox} onChange={(e) => handleQtyPerBoxChange(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="col-span-1">
             <label className="mb-1 block text-[11px] text-muted-foreground">Lote</label>
@@ -207,6 +256,17 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-border bg-muted/50">
+                <td colSpan={2} className="px-4 py-2.5 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyUnit}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyBoxes}</td>
+                <td className="px-4 py-2.5"></td>
+                <td className="px-4 py-2.5"></td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? totalVolume : "—"}</td>
+                <td className="px-4 py-2.5"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

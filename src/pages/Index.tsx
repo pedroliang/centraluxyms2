@@ -27,7 +27,10 @@ export default function Dashboard() {
     return processes.filter((p) => {
       const q = search.toUpperCase();
       const matchesSearch =
-        !q || p.code.toUpperCase().includes(q) || p.name.toUpperCase().includes(q);
+        !q || 
+        p.code.toUpperCase().includes(q) || 
+        p.name.toUpperCase().includes(q) ||
+        (p.cliente && p.cliente.toUpperCase().includes(q));
       const processDate = new Date(p.date);
       const matchesFrom = !dateRange.from || processDate >= dateRange.from;
       const matchesTo = !dateRange.to || processDate <= dateRange.to;
