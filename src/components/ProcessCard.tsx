@@ -18,7 +18,7 @@ interface ProcessCardProps {
 
 export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardProps) {
   const status = statusConfig[process.status];
-  const dateFormatted = new Date(process.date).toLocaleDateString("pt-BR");
+  const dateFormatted = process.date.split('T')[0].split('-').reverse().join('/');
 
   return (
     <div

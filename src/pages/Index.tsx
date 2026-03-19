@@ -71,7 +71,7 @@ export default function Dashboard() {
           <div class="process">
             <div class="process-header">
               <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
-              <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
+              <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
             </div>
             <table>
               <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
@@ -143,7 +143,7 @@ export default function Dashboard() {
         <div class="process">
           <div class="process-header">
             <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
-            <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
+            <span style="float:right;font-size:12px;">${p.date.split('T')[0].split('-').reverse().join('/')} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
           </div>
           <table>
             <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Unit.</th><th>Caixas</th><th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
