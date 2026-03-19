@@ -59,7 +59,7 @@ export default function NewProcess() {
         <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Nome do Processo</label>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Veículo</label>
               <select value={name} onChange={(e) => setName(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <option value="Carreta">Carreta</option>
                 <option value="Contêiner">Contêiner</option>
