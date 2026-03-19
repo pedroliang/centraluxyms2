@@ -30,7 +30,8 @@ export default function Dashboard() {
         !q || 
         p.code.toUpperCase().includes(q) || 
         p.name.toUpperCase().includes(q) ||
-        (p.cliente && p.cliente.toUpperCase().includes(q));
+        (p.cliente && p.cliente.toUpperCase().includes(q)) ||
+        p.products.some(prod => prod.code.toUpperCase().includes(q) || prod.description.toUpperCase().includes(q));
       const processDate = new Date(p.date);
       const matchesFrom = !dateRange.from || processDate >= dateRange.from;
       const matchesTo = !dateRange.to || processDate <= dateRange.to;
@@ -208,7 +209,7 @@ export default function Dashboard() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Pesquisar código ou nome..."
+              placeholder="Pesquisar código, nome, cliente ou item..."
               className="pl-9 bg-card"
             />
           </div>
