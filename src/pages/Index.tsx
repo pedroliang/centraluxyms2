@@ -70,7 +70,7 @@ export default function Dashboard() {
         ${toPrint.map(p => `
           <div class="process">
             <div class="process-header">
-              <span style="font-weight:600;">${p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
+              <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
               <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
             </div>
             <table>
@@ -138,7 +138,7 @@ export default function Dashboard() {
       ${toPrint.map(p => `
         <div class="process">
           <div class="process-header">
-            <span style="font-weight:600;">${p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
+            <span style="font-weight:600;">${p.cliente ? p.cliente + ' - ' + p.name : p.name}</span> — Processo / Código: <span class="code">${p.code}</span>
             <span style="float:right;font-size:12px;">${new Date(p.date).toLocaleDateString("pt-BR")} | ${p.type === "loading" ? "Carregamento" : "Descarga"} | ${p.status.toUpperCase()}</span>
           </div>
           <table>
