@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Button } from "@/components/ui/button";
@@ -7,30 +7,44 @@ import { Input } from "@/components/ui/input";
 import { useProcessStore } from "@/stores/processStore";
 import { Process, ProcessType } from "@/types/process";
 import { ArrowLeft, Save, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 export default function NewProcess() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { addProcess } = useProcessStore();
+  const { processes, addProcess, updateProcess } = useProcessStore();
 
-  const [name, setName] = useState("Carreta");
-  const [code, setCode] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [type, setType] = useState<ProcessType>("unloading");
-  const [origin, setOrigin] = useState("Brasília");
-  const [destination, setDestination] = useState("São Paulo");
-  const [cliente, setCliente] = useState("");
+  const existingProcess = useMemo(() => processes.find(p => p.id === id), [processes, id]);
 
-  const processId = crypto.randomUUID();
+  const [name, setName] = useState(existingProcess?.name || "Carreta");
+  const [code, setCode] = useState(existingProcess?.code || "");
+  const [date, setDate] = useState<Date>(existingProcess ? parseISO(existingProcess.date) : new Date());
+  const [type, setType] = useState<ProcessType>(existingProcess?.type || "unloading");
+  const [origin, setOrigin] = useState(existingProcess?.origin || "Brasília");
+  const [destination, setDestination] = useState(existingProcess?.destination || "São Paulo");
+  const [cliente, setCliente] = useState(existingProcess?.cliente || "");
+
+  const [processId] = useState(existingProcess?.id || crypto.randomUUID());
+
+  useEffect(() => {
+    if (existingProcess) {
+      setName(existingProcess.name);
+      setCode(existingProcess.code);
+      setDate(parseISO(existingProcess.date));
+      setType(existingProcess.type);
+      setOrigin(existingProcess.origin);
+      setDestination(existingProcess.destination);
+      setCliente(existingProcess.cliente || "");
+    }
+  }, [existingProcess]);
 
   const handleSave = () => {
     if (!name.trim() || !code.trim()) return;
-    const process: Process = {
-      id: processId,
+    const processData = {
       name: name.trim(),
       code: code.trim().toUpperCase(),
       date: format(date, "yyyy-MM-dd"),
@@ -38,12 +52,22 @@ export default function NewProcess() {
       origin,
       destination,
       cliente: cliente.trim() || undefined,
-      status: "active",
-      products: [],
-      createdAt: new Date().toISOString(),
     };
-    addProcess(process);
-    navigate(`/processo/${processId}`);
+    
+    if (existingProcess) {
+      updateProcess(processId, processData);
+      navigate(`/processo/${processId}`);
+    } else {
+      const newProcess: Process = {
+        id: processId,
+        ...processData,
+        status: "active",
+        products: [],
+        createdAt: new Date().toISOString(),
+      };
+      addProcess(newProcess);
+      navigate(`/processo/${processId}`);
+    }
   };
 
   return (
@@ -53,7 +77,9 @@ export default function NewProcess() {
           <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-semibold tracking-heading text-foreground">Novo Processo</h1>
+          <h1 className="text-lg font-semibold tracking-heading text-foreground">
+            {existingProcess ? "Editar Processo" : "Novo Processo"}
+          </h1>
         </div>
       </div>
 
@@ -145,17 +171,15 @@ export default function NewProcess() {
               </div>
             </div>
           </div>
-          </div>
-
           <div className="pt-2">
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente (Opcional)</label>
             <Input value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Ex: Mercado Livre" className="bg-background" />
           </div>
 
           <div className="pt-4 flex justify-end">
-            <Button onClick={handleSave} disabled={!name.trim() || !code.trim()}>
+            <Button onClick={handleSave} disabled={!code.trim()}>
               <Save className="h-4 w-4 mr-1.5" />
-              Criar Processo
+              {existingProcess ? "Salvar Alterações" : "Criar Processo"}
             </Button>
           </div>
         </div>

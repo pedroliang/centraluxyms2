@@ -19,6 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/processo/novo" element={<NewProcess />} />
+          <Route path="/processo/editar/:id" element={<NewProcess />} />
           <Route path="/processo/:id" element={<ProcessDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

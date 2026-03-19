@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Link } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package, Loader2, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Search, CalendarIcon, Printer, Package, Loader2, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { processes, fetchProcesses, isLoading, deleteProcess } = useProcessStore();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -164,6 +165,12 @@ export default function Dashboard() {
 
           {selectedIds.length > 0 && (
             <div className="flex gap-2">
+              {selectedIds.length === 1 && (
+                <Button variant="outline" onClick={() => navigate(`/processo/editar/${selectedIds[0]}`)} className="gap-2">
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </Button>
+              )}
               <Button variant="destructive" onClick={handleDeleteSelected} className="gap-2">
                 <Trash2 className="h-4 w-4" />
                 Excluir ({selectedIds.length})
