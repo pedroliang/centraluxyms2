@@ -69,6 +69,7 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       status: p.status,
       origin: p.origin || "Indefinida",
       destination: p.destination || "Indefinida",
+      cliente: p.cliente,
       createdAt: p.created_at,
       products: productsData
         .filter((prod) => prod.process_id === p.id)
@@ -102,6 +103,7 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       status: process.status,
       origin: process.origin,
       destination: process.destination,
+      cliente: process.cliente,
     }]);
 
     if (error) {

@@ -30,6 +30,7 @@ export interface Process {
   status: ProcessStatus;
   origin: string;
   destination: string;
+  cliente?: string;
   products: Product[];
   createdAt: string;
 }

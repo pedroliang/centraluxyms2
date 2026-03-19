@@ -1,7 +1,7 @@
 import React from "react";
 import { Process, ProcessStatus } from "@/types/process";
 import { cn } from "@/lib/utils";
-import { Truck, Package, Calendar, ArrowRight, MapPin } from "lucide-react";
+import { Truck, Package, Calendar, ArrowRight, MapPin, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const statusConfig: Record<ProcessStatus, { label: string; className: string }> = {
@@ -41,7 +41,15 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="font-mono text-sm font-semibold text-foreground tracking-heading">{process.code}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-sm font-semibold text-foreground tracking-heading">{process.code}</p>
+              {process.cliente && (
+                <span className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                  <Building2 className="h-3 w-3" />
+                  {process.cliente}
+                </span>
+              )}
+            </div>
             <p className="mt-0.5 text-sm text-foreground">{process.name}</p>
           </div>
           <span className={cn("rounded px-2 py-0.5 text-[11px] font-semibold", status.className)}>

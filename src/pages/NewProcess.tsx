@@ -23,6 +23,7 @@ export default function NewProcess() {
   const [type, setType] = useState<ProcessType>("unloading");
   const [origin, setOrigin] = useState("Brasília");
   const [destination, setDestination] = useState("São Paulo");
+  const [cliente, setCliente] = useState("");
 
   const processId = crypto.randomUUID();
 
@@ -36,6 +37,7 @@ export default function NewProcess() {
       type,
       origin,
       destination,
+      cliente: cliente.trim() || undefined,
       status: "active",
       products: [],
       createdAt: new Date().toISOString(),
@@ -143,8 +145,14 @@ export default function NewProcess() {
               </div>
             </div>
           </div>
+          </div>
 
-          <div className="pt-2 flex justify-end">
+          <div className="pt-2">
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente (Opcional)</label>
+            <Input value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Ex: Mercado Livre" className="bg-background" />
+          </div>
+
+          <div className="pt-4 flex justify-end">
             <Button onClick={handleSave} disabled={!name.trim() || !code.trim()}>
               <Save className="h-4 w-4 mr-1.5" />
               Criar Processo
