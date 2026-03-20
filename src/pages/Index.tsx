@@ -73,8 +73,6 @@ export default function Dashboard() {
         <h1>CENTRALUX YMS</h1>
         <p style="font-size:12px;color:#666;">Gerado em: ${new Date().toLocaleString("pt-BR")}</p>
         ${toPrint.map(p => {
-          const hasSP = p.products.some(prod => (prod.qtyUnitSP || 0) > 0 || (prod.qtyBoxesSP || 0) > 0);
-          const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
           return `
           <div class="process">
             <div class="process-header" style="border-bottom: 2px solid #2563eb;">
@@ -85,27 +83,27 @@ export default function Dashboard() {
               </span>
             </div>
             <table>
-              <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th><th>Vol.</th></tr></thead>
               <tbody>
                 ${p.products.map(prod => `
                   <tr>
                     <td class="code">${prod.code}</td>
                     <td>${prod.description.length > 30 ? prod.description.substring(0,27) + "..." : prod.description}</td>
                     <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
-                    ${hasSP ? `<td class="num">${prod.qtyUnitSP || "—"}</td>` : ''}
-                    ${hasDF ? `<td class="num">${prod.qtyUnitDF || "—"}</td>` : ''}
+                    <td class="num">${prod.qtyUnitSP || "—"}</td>
+                    <td class="num">${prod.qtyUnitDF || "—"}</td>
                     <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
-                    ${hasSP ? `<td class="num">${prod.qtyBoxesSP || "—"}</td>` : ''}
-                    ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
+                    <td class="num">${prod.qtyBoxesSP || "—"}</td>
+                    <td class="num">${prod.qtyBoxesDF || "—"}</td>
                     <td class="num">${prod.qtyPerBox}</td>
                     <td>${prod.lote || "—"}</td>
-                    <td class="num">${prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
+                    <td class="num">${prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                   </tr>
                 `).join("")}
               </tbody>
             </table>
           </div>
-        `}).join("")}
+        `; }).join("")}
       </div>
       <script>
         window.onload = function() {
@@ -129,7 +127,6 @@ export default function Dashboard() {
 
   const handlePrint = () => {
     const toPrint = processes.filter((p) => selectedIds.includes(p.id));
-    // Open print view
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     
@@ -157,8 +154,6 @@ export default function Dashboard() {
       <h1>CENTRALUX YMS</h1>
       <p style="font-size:12px;color:#666;">Impresso em: ${new Date().toLocaleString("pt-BR")}</p>
       ${toPrint.map(p => {
-        const hasSP = p.products.some(prod => (prod.qtyUnitSP || 0) > 0 || (prod.qtyBoxesSP || 0) > 0);
-        const hasDF = p.products.some(prod => (prod.qtyUnitDF || 0) > 0 || (prod.qtyBoxesDF || 0) > 0);
         return `
         <div class="process">
           <div class="process-header" style="border-bottom: 2px solid #2563eb;">
@@ -169,27 +164,28 @@ export default function Dashboard() {
             </span>
           </div>
           <table>
-            <thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th>${hasSP ? '<th>Unt. SP</th>' : ''}${hasDF ? '<th>Unt. DF</th>' : ''}<th>Caixas</th>${hasSP ? '<th>Cx. SP</th>' : ''}${hasDF ? '<th>Cx. DF</th>' : ''}<th>Qtd/Cx</th><th>Lote</th><th>Volume</th></tr></thead>
+            <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th><th>Vol.</th></tr></thead>
             <tbody>
               ${p.products.map(prod => `
                 <tr>
                   <td class="code">${prod.code}</td>
                   <td>${prod.description}</td>
                   <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
-                  ${hasSP ? `<td class="num">${prod.qtyUnitSP || "—"}</td>` : ''}
-                  ${hasDF ? `<td class="num">${prod.qtyUnitDF || "—"}</td>` : ''}
+                  <td class="num">${prod.qtyUnitSP || "—"}</td>
+                  <td class="num">${prod.qtyUnitDF || "—"}</td>
                   <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
-                  ${hasSP ? `<td class="num">${prod.qtyBoxesSP || "—"}</td>` : ''}
-                  ${hasDF ? `<td class="num">${prod.qtyBoxesDF || "—"}</td>` : ''}
+                  <td class="num">${prod.qtyBoxesSP || "—"}</td>
+                  <td class="num">${prod.qtyBoxesDF || "—"}</td>
                   <td class="num">${prod.qtyPerBox}</td>
                   <td>${prod.lote || "—"}</td>
-                  <td class="num">${prod.cubagem?.volume ? prod.cubagem.volume.toFixed(3).replace(".", ",") : "—"}</td>
+                  <td class="num">${prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                 </tr>
               `).join("")}
             </tbody>
           </table>
         </div>
-      `}).join("")}
+        `;
+      }).join("")}
       </body></html>
     `;
     printWindow.document.write(html);

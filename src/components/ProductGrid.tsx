@@ -36,7 +36,19 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Código": "1234", "Descrição": "Exemplo", "Qtd Total": 10, "Qtd/Cx": 5, "Lote": "L123" }
+      { 
+        "Código": "1234", 
+        "Descrição": "Exemplo de Produto", 
+        "Q.Unit": 100, 
+        "Unt.SP": 60,
+        "Unt.DF": 40,
+        "Caixas": 10,
+        "Cx.SP": 6,
+        "Cx.DF": 4,
+        "Q/Cx": 10, 
+        "Lote": "ABC-123",
+        "Vol.": "1,50"
+      }
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
@@ -64,26 +76,62 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           if (!code) continue;
           
           const description = row["Descrição"] || row["Descricao"] || row["description"] || "Importado";
-          const qtyUnit = Number(row["Qtd Total"] || row["Quantidade"] || row["qty"] || 0);
-          const qtyPerBox = Number(row["Qtd/Cx"] || row["Por Caixa"] || 0);
+          
+          const qtyUnit = Number(row["Q.Unit"] || row["Qtd Total"] || row["Quantidade"] || 0);
+          const qtyUnitSP = Number(row["Unt.SP"] || row["Unt. SP"] || 0);
+          const qtyUnitDF = Number(row["Unt.DF"] || row["Unt. DF"] || 0);
+          
+          const qtyBoxes = Number(row["Caixas"] || row["Total Caixas"] || 0);
+          const qtyBoxesSP = Number(row["Cx.SP"] || row["Cx. SP"] || 0);
+          const qtyBoxesDF = Number(row["Cx.DF"] || row["Cx. DF"] || 0);
+          
+          const qtyPerBox = Number(row["Q/Cx"] || row["Qtd/Cx"] || row["Por Caixa"] || 0);
           const lote = row["Lote"] || row["Batch"] || "";
+          const volumeRaw = row["Vol."] || row["Volume"] || row["Vol"] || 0;
+          const volume = typeof volumeRaw === "string" ? parseFloat(volumeRaw.replace(",", ".")) : Number(volumeRaw);
+          
+          let finalQtyBoxes = qtyBoxes;
+          if (finalQtyBoxes === 0 && qtyPerBox > 0 && qtyUnit > 0) {
+            finalQtyBoxes = Number((qtyUnit / qtyPerBox).toFixed(4));
+          } else if (finalQtyBoxes === 0 && (qtyBoxesSP > 0 || qtyBoxesDF > 0)) {
+            finalQtyBoxes = qtyBoxesSP + qtyBoxesDF;
+          }
+
+          let finalQtyUnit = qtyUnit;
+          if (finalQtyUnit === 0 && qtyPerBox > 0 && finalQtyBoxes > 0) {
+            finalQtyUnit = Number((finalQtyBoxes * qtyPerBox).toFixed(4));
+          } else if (finalQtyUnit === 0 && (qtyUnitSP > 0 || qtyUnitDF > 0)) {
+            finalQtyUnit = qtyUnitSP + qtyUnitDF;
+          }
           
           const newProd: Product = {
             id: crypto.randomUUID(),
             code,
             description,
-            qtyUnit,
-            qtyBoxes: qtyPerBox > 0 ? Number((qtyUnit / qtyPerBox).toFixed(4)) : 0,
+            qtyUnit: finalQtyUnit,
+            qtyBoxes: finalQtyBoxes,
             qtyPerBox,
-            isManual: true, // Mark as manual if imported from arbitrary excel
+            qtyUnitSP: qtyUnitSP || undefined,
+            qtyUnitDF: qtyUnitDF || undefined,
+            qtyBoxesSP: qtyBoxesSP || undefined,
+            qtyBoxesDF: qtyBoxesDF || undefined,
+            isManual: true,
             isOverridden: false,
-            lote: lote || undefined
+            lote: lote || undefined,
+            cubagem: volume > 0 ? {
+              comprimento: 0,
+              largura: 0,
+              altura: 0,
+              volume: volume,
+              unitVolume: finalQtyBoxes > 0 ? volume / finalQtyBoxes : undefined
+            } : undefined
           };
           addProduct(processId, newProd);
           count++;
         }
         toast.success(`${count} produtos importados com sucesso!`);
       } catch (err) {
+        console.error("Import error:", err);
         toast.error("Erro ao processar Excel");
       } finally {
         setIsProcessing(false);
@@ -471,11 +519,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Descrição</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd Total</th>
-                {hasSP && <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Qtd. Unit. SP">Unt. SP</th>}
-                {hasDF && <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Qtd. Unit. DF">Unt. DF</th>}
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Qtd. Unit. SP">Unt. SP</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Qtd. Unit. DF">Unt. DF</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider" title="Total Caixas">Caixas</th>
-                {hasSP && <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Caixas SP">Cx. SP</th>}
-                {hasDF && <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Caixas DF">Cx. DF</th>}
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Caixas SP">Cx. SP</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Caixas DF">Cx. DF</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd/Cx</th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Lote</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Volume</th>
@@ -516,20 +564,16 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       />
                     ) : prod.qtyUnit}
                   </td>
-                  {hasSP && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                       {editingId === prod.id ? (
                         <input type="number" defaultValue={prod.qtyUnitSP} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitSP", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyUnitSP || "—")}
                     </td>
-                  )}
-                  {hasDF && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                       {editingId === prod.id ? (
                         <input type="number" defaultValue={prod.qtyUnitDF} onBlur={(e) => handleInlineUpdate(prod, "qtyUnitDF", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyUnitDF || "—")}
                     </td>
-                  )}
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium">
                     {editingId === prod.id ? (
                       <input
@@ -541,20 +585,16 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       />
                     ) : prod.qtyBoxes}
                   </td>
-                  {hasSP && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-blue-600">
                       {editingId === prod.id ? (
                         <input type="number" defaultValue={prod.qtyBoxesSP} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesSP", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-blue-600/40 text-blue-600 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyBoxesSP || "—")}
                     </td>
-                  )}
-                  {hasDF && (
                     <td className="px-4 py-2.5 text-right tabular-nums text-orange-500">
                       {editingId === prod.id ? (
                         <input type="number" defaultValue={prod.qtyBoxesDF} onBlur={(e) => handleInlineUpdate(prod, "qtyBoxesDF", e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }} className="w-12 text-right rounded border border-orange-500/40 text-orange-500 bg-background px-1 py-0.5 text-sm" />
                       ) : (prod.qtyBoxesDF || "—")}
                     </td>
-                  )}
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {editingId === prod.id ? (
                       <input
@@ -612,11 +652,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
               <tr className="border-t-2 border-border bg-muted/50">
                 <td colSpan={2} className="px-4 py-2.5 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyUnit}</td>
-                {hasSP && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyUnitSP}</td>}
-                {hasDF && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyUnitDF}</td>}
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyUnitSP}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyUnitDF}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyBoxes}</td>
-                {hasSP && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyBoxesSP}</td>}
-                {hasDF && <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>}
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyBoxesSP}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? (totalVolume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
