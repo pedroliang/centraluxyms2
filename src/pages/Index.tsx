@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [destinationFilter, setDestinationFilter] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProcesses();
@@ -35,9 +36,13 @@ export default function Dashboard() {
       const processDate = new Date(p.date);
       const matchesFrom = !dateRange.from || processDate >= dateRange.from;
       const matchesTo = !dateRange.to || processDate <= dateRange.to;
-      return matchesSearch && matchesFrom && matchesTo;
+      
+      const matchesDestination = !destinationFilter || 
+        (p.destination && p.destination.toUpperCase().includes(destinationFilter.toUpperCase()));
+
+      return matchesSearch && matchesFrom && matchesTo && matchesDestination;
     });
-  }, [processes, search, dateRange]);
+  }, [processes, search, dateRange, destinationFilter]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -260,6 +265,25 @@ export default function Dashboard() {
               )}
             </PopoverContent>
           </Popover>
+
+          <div className="flex items-center gap-2 border-l border-border pl-3">
+            <Button 
+              variant={destinationFilter === "São Paulo" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setDestinationFilter(destinationFilter === "São Paulo" ? null : "São Paulo")}
+              className="gap-2"
+            >
+              São Paulo
+            </Button>
+            <Button 
+              variant={destinationFilter === "Brasília" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setDestinationFilter(destinationFilter === "Brasília" ? null : "Brasília")}
+              className="gap-2"
+            >
+              Brasília
+            </Button>
+          </div>
 
           {selectedIds.length > 0 && (
             <div className="flex gap-2">
