@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [destinationFilter, setDestinationFilter] = useState<string | null>(null);
+  const [quickFilter, setQuickFilter] = useState<{ type: "origin" | "destination"; value: string } | null>(null);
 
   useEffect(() => {
     fetchProcesses();
@@ -37,12 +37,15 @@ export default function Dashboard() {
       const matchesFrom = !dateRange.from || processDate >= dateRange.from;
       const matchesTo = !dateRange.to || processDate <= dateRange.to;
       
-      const matchesDestination = !destinationFilter || 
-        (p.destination && p.destination.toUpperCase().includes(destinationFilter.toUpperCase()));
+      const matchesQuickFilter = !quickFilter || (
+        quickFilter.type === "origin"
+          ? p.origin?.toUpperCase().includes(quickFilter.value.toUpperCase())
+          : p.destination?.toUpperCase().includes(quickFilter.value.toUpperCase())
+      );
 
-      return matchesSearch && matchesFrom && matchesTo && matchesDestination;
+      return matchesSearch && matchesFrom && matchesTo && matchesQuickFilter;
     });
-  }, [processes, search, dateRange, destinationFilter]);
+  }, [processes, search, dateRange, quickFilter]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -268,17 +271,33 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-2 border-l border-border pl-3">
             <Button 
-              variant={destinationFilter === "São Paulo" ? "default" : "outline"} 
+              variant={!quickFilter ? "default" : "outline"} 
               size="sm"
-              onClick={() => setDestinationFilter(destinationFilter === "São Paulo" ? null : "São Paulo")}
+              onClick={() => setQuickFilter(null)}
+              className="px-4"
+            >
+              Todos
+            </Button>
+            <Button 
+              variant={quickFilter?.value === "Porto" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setQuickFilter({ type: "origin", value: "Porto" })}
+              className="gap-2"
+            >
+              Porto
+            </Button>
+            <Button 
+              variant={quickFilter?.value === "São Paulo" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setQuickFilter({ type: "destination", value: "São Paulo" })}
               className="gap-2"
             >
               São Paulo
             </Button>
             <Button 
-              variant={destinationFilter === "Brasília" ? "default" : "outline"} 
+              variant={quickFilter?.value === "Brasília" ? "default" : "outline"} 
               size="sm"
-              onClick={() => setDestinationFilter(destinationFilter === "Brasília" ? null : "Brasília")}
+              onClick={() => setQuickFilter({ type: "destination", value: "Brasília" })}
               className="gap-2"
             >
               Brasília
