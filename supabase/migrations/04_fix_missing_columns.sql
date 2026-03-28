@@ -1,0 +1,6 @@
+-- Adicionar colunas de SP e DF na tabela de produtos
+ALTER TABLE IF EXISTS public.products 
+ADD COLUMN IF NOT EXISTS qty_unit_sp INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS qty_unit_df INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS qty_boxes_sp INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS qty_boxes_df INTEGER DEFAULT 0;
