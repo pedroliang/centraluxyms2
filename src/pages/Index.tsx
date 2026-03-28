@@ -91,7 +91,7 @@ export default function Dashboard() {
               </span>
             </div>
             <table>
-              <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th><th>Vol.</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th></tr></thead>
               <tbody>
                 ${p.products.map(prod => `
                   <tr>
@@ -105,7 +105,6 @@ export default function Dashboard() {
                     <td class="num">${prod.qtyBoxesDF || "—"}</td>
                     <td class="num">${prod.qtyPerBox}</td>
                     <td>${prod.lote || "—"}</td>
-                    <td class="num">${prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -172,7 +171,7 @@ export default function Dashboard() {
             </span>
           </div>
           <table>
-            <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th><th>Vol.</th></tr></thead>
+            <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th></tr></thead>
             <tbody>
               ${p.products.map(prod => `
                 <tr>
@@ -186,7 +185,6 @@ export default function Dashboard() {
                   <td class="num">${prod.qtyBoxesDF || "—"}</td>
                   <td class="num">${prod.qtyPerBox}</td>
                   <td>${prod.lote || "—"}</td>
-                  <td class="num">${prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                 </tr>
               `).join("")}
             </tbody>

@@ -28,10 +28,8 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [qtyBoxesSP, setQtyBoxesSP] = useState("");
   const [qtyBoxesDF, setQtyBoxesDF] = useState("");
   const [lote, setLote] = useState("");
-  const [cubVol, setCubVol] = useState("");
   const [isManual, setIsManual] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
-  const [baseUnitVol, setBaseUnitVol] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const downloadTemplate = () => {
@@ -217,17 +215,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     }
   };
 
-  // Sync volume when quantities change in Add Form
-  React.useEffect(() => {
-    const boxes = (parseFloat(qtyBoxesSP) || 0) + (parseFloat(qtyBoxesDF) || 0);
-    if (baseUnitVol > 0 && boxes > 0) {
-      setCubVol(((baseUnitVol * boxes) / 1000).toFixed(2).replace(".", ","));
-      // Also update total qtyBoxes if it's not manually set or to keep it in sync
-      setQtyBoxes(boxes.toString());
-    } else if (baseUnitVol > 0 && parseFloat(qtyBoxes) > 0) {
-      setCubVol(((baseUnitVol * parseFloat(qtyBoxes)) / 1000).toFixed(2).replace(".", ","));
-    }
-  }, [qtyBoxesSP, qtyBoxesDF, qtyBoxes, baseUnitVol]);
 
   const handleQtyUnitChange = (val: string) => {
     setQtyUnit(val);
@@ -241,6 +228,24 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       } else if (!isNaN(boxes) && boxes > 0) {
         setQtyPerBox(Number((unit / boxes).toFixed(4)).toString());
       }
+    }
+  };
+
+  const handleQtyUnitSPChange = (val: string) => {
+    setQtyUnitSP(val);
+    const unit = parseFloat(val);
+    const perBox = parseFloat(qtyPerBox);
+    if (!isNaN(unit) && !isNaN(perBox) && perBox > 0) {
+      setQtyBoxesSP(Number((unit / perBox).toFixed(4)).toString());
+    }
+  };
+
+  const handleQtyUnitDFChange = (val: string) => {
+    setQtyUnitDF(val);
+    const unit = parseFloat(val);
+    const perBox = parseFloat(qtyPerBox);
+    if (!isNaN(unit) && !isNaN(perBox) && perBox > 0) {
+      setQtyBoxesDF(Number((unit / perBox).toFixed(4)).toString());
     }
   };
 
@@ -264,6 +269,8 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     const perBox = parseFloat(val);
     const boxes = parseFloat(qtyBoxes);
     const unit = parseFloat(qtyUnit);
+    const unitSP = parseFloat(qtyUnitSP);
+    const unitDF = parseFloat(qtyUnitDF);
     
     if (!isNaN(perBox) && perBox > 0) {
       if (!isNaN(unit)) {
@@ -271,12 +278,19 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       } else if (!isNaN(boxes)) {
         setQtyUnit(Number((boxes * perBox).toFixed(4)).toString());
       }
+      
+      if (!isNaN(unitSP)) {
+        setQtyBoxesSP(Number((unitSP / perBox).toFixed(4)).toString());
+      }
+      if (!isNaN(unitDF)) {
+        setQtyBoxesDF(Number((unitDF / perBox).toFixed(4)).toString());
+      }
     }
   };
 
   const resetForm = () => {
     setCode(""); setDescription(""); setQtyUnit(""); setQtyBoxes("");
-    setQtyPerBox(""); setLote(""); setCubVol(""); setIsManual(false); setAutoFilled(false);
+    setQtyPerBox(""); setLote(""); setIsManual(false); setAutoFilled(false);
     setQtyUnitSP(""); setQtyUnitDF(""); setQtyBoxesSP(""); setQtyBoxesDF("");
   };
 
@@ -285,12 +299,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     setDescription(product.description);
     setLote(product.lote || "");
     setQtyPerBox(product.qtyPerBox?.toString() || "");
-    // Base unit volume (X*Y*Z / 1,000,000)
-    const unitVol = product.cubagem ? (product.cubagem.x * product.cubagem.y * product.cubagem.z) / 1000000 : 0;
-    setBaseUnitVol(unitVol);
-    // Initial volume calculation (will be updated by useEffect)
-    const initialBoxes = (parseFloat(qtyBoxesSP) || 0) + (parseFloat(qtyBoxesDF) || 0) || parseFloat(qtyBoxes) || 0;
-    setCubVol(unitVol && initialBoxes ? (unitVol * initialBoxes).toFixed(3).replace(".", ",") : (unitVol ? unitVol.toFixed(3).replace(".", ",") : ""));
     setIsManual(false);
     setAutoFilled(true);
   };
@@ -308,13 +316,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       qtyUnitDF: Number(qtyUnitDF) || 0,
       qtyBoxesSP: Number(qtyBoxesSP) || 0,
       qtyBoxesDF: Number(qtyBoxesDF) || 0,
-      cubagem: cubVol ? { 
-        comprimento: baseUnitVol > 0 ? 1 : 0, // Placeholder but indicates we have dimensions
-        largura: 0, 
-        altura: 0, 
-        volume: Number(cubVol),
-        unitVolume: baseUnitVol // We'll add this to the type or metadata
-      } : undefined,
       lote: lote || undefined,
       isManual,
       isOverridden: false,
@@ -345,18 +346,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
         if (prod.qtyUnit) updates.qtyBoxes = Number((prod.qtyUnit / perBox).toFixed(4));
         if (prod.qtyUnitSP) updates.qtyBoxesSP = Number((prod.qtyUnitSP / perBox).toFixed(4));
         if (prod.qtyUnitDF) updates.qtyBoxesDF = Number((prod.qtyUnitDF / perBox).toFixed(4));
-      }
-    }
-
-    // Recalculate volume if quantity changes
-    if (prod.cubagem?.unitVolume) {
-      const currentSP = field === "qtyBoxesSP" ? num : (prod.qtyBoxesSP || 0);
-      const currentDF = field === "qtyBoxesDF" ? num : (prod.qtyBoxesDF || 0);
-      const currentTotal = field === "qtyBoxes" ? num : (prod.qtyBoxes || 0);
-      
-      const boxes = (currentSP + currentDF) || currentTotal;
-      if (boxes >= 0) {
-        updates.cubagem = { ...prod.cubagem, volume: prod.cubagem.unitVolume * boxes };
       }
     }
 
@@ -444,7 +433,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
             <label className="mb-1 block text-[11px] text-muted-foreground truncate">Código</label>
             <SmartCodeInput
               value={code}
-              onChange={(v) => { setCode(v); if (autoFilled) { setAutoFilled(false); setDescription(""); setLote(""); setQtyPerBox(""); setCubVol(""); } }}
+              onChange={(v) => { setCode(v); if (autoFilled) { setAutoFilled(false); setDescription(""); setLote(""); setQtyPerBox(""); } }}
               onSelect={handleSelectProduct}
             />
           </div>
@@ -466,11 +455,11 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           </div>
           <div className="w-16 shrink-0">
             <label className="mb-1 block text-[11px] text-blue-600 truncate" title="Qtd. Unit SP">Unt.SP</label>
-            <input type="number" value={qtyUnitSP} onChange={(e) => setQtyUnitSP(e.target.value)} className="h-10 w-full rounded-md border border-blue-600/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-blue-600" />
+            <input type="number" value={qtyUnitSP} onChange={(e) => handleQtyUnitSPChange(e.target.value)} className="h-10 w-full rounded-md border border-blue-600/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-blue-600" />
           </div>
           <div className="w-16 shrink-0">
             <label className="mb-1 block text-[11px] text-orange-500 truncate" title="Qtd. Unit DF">Unt.DF</label>
-            <input type="number" value={qtyUnitDF} onChange={(e) => setQtyUnitDF(e.target.value)} className="h-10 w-full rounded-md border border-orange-500/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-orange-500" />
+            <input type="number" value={qtyUnitDF} onChange={(e) => handleQtyUnitDFChange(e.target.value)} className="h-10 w-full rounded-md border border-orange-500/40 bg-card px-2 py-2 text-sm tabular-nums text-right focus-visible:ring-orange-500" />
           </div>
           <div className="w-16 shrink-0">
             <label className="mb-1 block text-[11px] text-muted-foreground truncate" title="Total Caixas">Caixas</label>
@@ -491,10 +480,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           <div className="w-20 shrink-0">
             <label className="mb-1 block text-[11px] text-muted-foreground truncate">Lote</label>
             <input value={lote} onChange={(e) => setLote(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-          </div>
-          <div className="w-20 shrink-0">
-            <label className="mb-1 block text-[11px] text-muted-foreground truncate" title="Volume (cm³)">Vol.</label>
-            <input type="number" value={cubVol} onChange={(e) => setCubVol(e.target.value)} className="h-10 w-full rounded-md border border-input bg-card px-2 py-2 text-sm tabular-nums text-right ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           </div>
           <div className="w-24 shrink-0">
             <Button onClick={handleAdd} disabled={!code} className="w-full">
@@ -526,7 +511,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Caixas DF">Cx. DF</th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd/Cx</th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Lote</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Volume</th>
                 <th className="px-4 py-2.5 w-20"></th>
               </tr>
             </thead>
@@ -617,7 +601,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                       />
                     ) : (prod.lote || "—")}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{prod.cubagem?.volume ? (prod.cubagem.volume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1">
                       <button
@@ -659,7 +642,6 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-orange-500">{totalQtyBoxesDF}</td>
                 <td className="px-4 py-2.5"></td>
                 <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-muted-foreground">{totalVolume > 0 ? (totalVolume / 1000).toFixed(2).replace(".", ",") : "—"}</td>
                 <td className="px-4 py-2.5"></td>
               </tr>
             </tfoot>
