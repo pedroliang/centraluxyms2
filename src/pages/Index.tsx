@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
@@ -19,6 +22,11 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [quickFilter, setQuickFilter] = useState<{ type: "origin" | "destination"; value: string } | null>(null);
+
+  // Print Config State
+  const [printConfigOpen, setPrintConfigOpen] = useState(false);
+  const [printActionType, setPrintActionType] = useState<"pdf" | "print" | null>(null);
+  const [printConfig, setPrintConfig] = useState<{ orientation: "portrait" | "landscape", color: "color" | "bw" }>({ orientation: "portrait", color: "color" });
 
   useEffect(() => {
     fetchProcesses();
@@ -77,6 +85,7 @@ export default function Dashboard() {
         .status-active { background: #eef2ff !important; color: #2563eb !important; }
         .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        ${printConfig.color === 'bw' ? '* { filter: grayscale(100%) !important; }' : ''}
       </style></head><body>
       <div id="pdf-content">
         <h1>CENTRALUX YMS</h1>
@@ -121,7 +130,7 @@ export default function Dashboard() {
             filename:     'Centralux_Processos_' + new Date().getTime() + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: printConfig.orientation }
           }).then(function() {
             setTimeout(() => window.close(), 500);
           });
@@ -157,7 +166,9 @@ export default function Dashboard() {
         .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
         @media print { 
           body { margin: 20px; } 
+          @page { size: ${printConfig.orientation}; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          ${printConfig.color === 'bw' ? '* { filter: grayscale(100%) !important; }' : ''}
         }
       </style></head><body>
       <h1>CENTRALUX YMS</h1>
@@ -316,11 +327,11 @@ export default function Dashboard() {
                 <Trash2 className="h-4 w-4" />
                 Excluir ({selectedIds.length})
               </Button>
-              <Button variant="outline" onClick={handleGeneratePDF} className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+              <Button variant="outline" onClick={() => { setPrintActionType('pdf'); setPrintConfigOpen(true); }} className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
                 <FileText className="h-4 w-4" />
                 Gerar PDF ({selectedIds.length})
               </Button>
-              <Button variant="outline" onClick={handlePrint} className="gap-2">
+              <Button variant="outline" onClick={() => { setPrintActionType('print'); setPrintConfigOpen(true); }} className="gap-2">
                 <Printer className="h-4 w-4" />
                 Imprimir ({selectedIds.length})
               </Button>
@@ -354,6 +365,58 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Footer/Modals */}
+      <Dialog open={printConfigOpen} onOpenChange={setPrintConfigOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{printActionType === 'pdf' ? "Configurações do PDF" : "Configurações de Impressão"}</DialogTitle>
+            <DialogDescription>
+              Ajuste o layout e as cores antes de confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="orientation" className="text-right">Orientação</Label>
+              <div className="col-span-3">
+                <Select value={printConfig.orientation} onValueChange={(v: "portrait" | "landscape") => setPrintConfig(prev => ({ ...prev, orientation: v }))}>
+                  <SelectTrigger id="orientation">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portrait">Retrato</SelectItem>
+                    <SelectItem value="landscape">Paisagem</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="color" className="text-right">Cor</Label>
+              <div className="col-span-3">
+                <Select value={printConfig.color} onValueChange={(v: "color" | "bw") => setPrintConfig(prev => ({ ...prev, color: v }))}>
+                  <SelectTrigger id="color">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="color">Colorido</SelectItem>
+                    <SelectItem value="bw">Preto e Branco</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrintConfigOpen(false)}>Cancelar</Button>
+            <Button type="button" onClick={() => {
+              setPrintConfigOpen(false);
+              if (printActionType === 'pdf') handleGeneratePDF();
+              else if (printActionType === 'print') handlePrint();
+            }}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
