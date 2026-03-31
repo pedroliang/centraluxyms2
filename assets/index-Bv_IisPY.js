@@ -323,10 +323,11 @@ License: MIT
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
-        .process { margin-bottom: 32px; page-break-inside: avoid; }
+        .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
         .code { font-family: monospace; font-weight: 600; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        tr { page-break-inside: avoid; break-inside: avoid; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
         th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -390,10 +391,11 @@ License: MIT
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
-        .process { margin-bottom: 32px; page-break-inside: avoid; }
+        .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
         .code { font-family: monospace; font-weight: 600; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        tr { page-break-inside: avoid; break-inside: avoid; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
         th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
