@@ -30,10 +30,22 @@ Este documento resume as atividades realizadas para a configuração e ajuste do
 - **Migração**: Realizamos a migração de 36 processos e 324 produtos do banco de dados antigo para o novo.
 - **Integridade**: Todos os dados históricos foram preservados e agora estão acessíveis no novo ambiente.
 
+## 5. Configurações de Impressão e PDF
+- **Modal de Configuração**: Adicionamos um modal que permite escolher:
+  - **Orientação**: Retrato ou Paisagem.
+  - **Cores**: Colorido ou Preto e Branco (escala de cinza).
+  - **Margens**: Padrão, Estreita ou Nenhuma.
+- **Totais**: Tanto o PDF quanto a Impressão agora exibem uma linha de **TOTAL** ao final da tabela, somando quantidades e caixas (incluindo SP/DF).
+- **Quebra de Página**: Corrigimos o erro onde componentes eram cortados entre folhas.
+
+## 6. Sincronização e Manutenção
+- **GitHub**: Repositório sincronizado e alterações enviadas.
+- **Supabase**: Gerada tipagem automática (`src/types/supabase.ts`) baseada no schema atual da nuvem.
+
 ## Próximos Passos
-- O sistema está totalmente funcional com a nova lógica de cálculos.
+- O sistema está totalmente funcional com as novas ferramentas de relatório.
 - O repositório GitHub está sincronizado com o código mais recente e as migrações do Supabase.
 
 ---
-**Data da última atualização:** 28/03/2026
+**Data da última atualização:** 31/03/2026
 **Responsável:** Antigravity (AI)

@@ -26,7 +26,7 @@ export default function Dashboard() {
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
   const [printActionType, setPrintActionType] = useState<"pdf" | "print" | null>(null);
-  const [printConfig, setPrintConfig] = useState<{ orientation: "portrait" | "landscape", color: "color" | "bw" }>({ orientation: "portrait", color: "color" });
+  const [printConfig, setPrintConfig] = useState<{ orientation: "portrait" | "landscape", color: "color" | "bw", margin: "standard" | "none" | "slim" }>({ orientation: "portrait", color: "color", margin: "standard" });
 
   useEffect(() => {
     fetchProcesses();
@@ -68,10 +68,10 @@ export default function Dashboard() {
     
     const html = `
       <!DOCTYPE html>
-      <html><head><title>Gerando PDF...</title>
+      <head><title>Gerando PDF...</title>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <style>
-        body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
+        body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: ${printConfig.margin === 'standard' ? '20mm' : printConfig.margin === 'slim' ? '10mm' : '0'}; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
         .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
@@ -118,6 +118,18 @@ export default function Dashboard() {
                   </tr>
                 `).join("")}
               </tbody>
+              <tfoot>
+                <tr style="background: #f8faff; font-weight: bold;">
+                  <td colspan="2" style="text-align: right;">TOTAL</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnit || 0), 0)}</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnitSP || 0), 0) || "—"}</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnitDF || 0), 0) || "—"}</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxes || 0), 0)}</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxesSP || 0), 0) || "—"}</td>
+                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxesDF || 0), 0) || "—"}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         `; }).join("")}
@@ -126,12 +138,20 @@ export default function Dashboard() {
         window.onload = function() {
           var element = document.getElementById('pdf-content');
           html2pdf(element, {
-            margin:       10,
+            margin:       ${printConfig.margin === 'standard' ? '10' : printConfig.margin === 'slim' ? '5' : '2'},
             filename:     'Centralux_Processos_' + new Date().getTime() + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: printConfig.orientation }
-          }).then(function() {
+          }).from(element).toPdf().get('pdf').then(function (pdf) {
+            var totalPages = pdf.internal.getNumberOfPages();
+            for (var i = 1; i <= totalPages; i++) {
+              pdf.setPage(i);
+              pdf.setFontSize(8);
+              pdf.setTextColor(150);
+              pdf.text('Página ' + i + ' de ' + totalPages, pdf.internal.pageSize.getWidth() - 30, pdf.internal.pageSize.getHeight() - 10);
+            }
+          }).save().then(function() {
             setTimeout(() => window.close(), 500);
           });
         };
@@ -149,9 +169,9 @@ export default function Dashboard() {
     
     const html = `
       <!DOCTYPE html>
-      <html><head><title>Impressão - Centralux YMS</title>
+      <head><title>Impressão - Centralux YMS</title>
       <style>
-        body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 40px; color: #1a1a2e; }
+        body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: ${printConfig.margin === 'standard' ? '20mm' : printConfig.margin === 'slim' ? '10mm' : '0'}; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
         .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
@@ -165,8 +185,11 @@ export default function Dashboard() {
         .status-active { background: #eef2ff !important; color: #2563eb !important; }
         .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
         @media print { 
-          body { margin: 20px; } 
-          @page { size: ${printConfig.orientation}; }
+          body { margin: ${printConfig.margin === 'none' ? '0' : '20px'}; } 
+          @page { 
+            size: ${printConfig.orientation}; 
+            margin: ${printConfig.margin === 'standard' ? '15mm' : printConfig.margin === 'slim' ? '5mm' : '0mm'}; 
+          }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           ${printConfig.color === 'bw' ? '* { filter: grayscale(100%) !important; }' : ''}
         }
@@ -386,6 +409,21 @@ export default function Dashboard() {
                   <SelectContent>
                     <SelectItem value="portrait">Retrato</SelectItem>
                     <SelectItem value="landscape">Paisagem</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="margin" className="text-right">Margens</Label>
+              <div className="col-span-3">
+                <Select value={printConfig.margin} onValueChange={(v: "standard" | "none" | "slim") => setPrintConfig(prev => ({ ...prev, margin: v }))}>
+                  <SelectTrigger id="margin">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Padrão</SelectItem>
+                    <SelectItem value="slim">Estreita</SelectItem>
+                    <SelectItem value="none">Nenhuma</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
