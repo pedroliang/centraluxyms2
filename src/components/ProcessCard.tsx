@@ -11,6 +11,7 @@ const statusConfig: Record<ProcessStatus, { label: string; className: string }> 
 };
 
 interface ProcessCardProps {
+  key?: string;
   process: Process;
   selected: boolean;
   onToggleSelect: (id: string) => void;
