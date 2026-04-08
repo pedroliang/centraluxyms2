@@ -20,7 +20,7 @@ interface ProcessCardProps {
 export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardProps) {
   const status = statusConfig[process.status];
   const dateFormatted = process.date.split('T')[0].split('-').reverse().join('/');
-  const isAjustado = process.name?.includes("[AJUSTADO]") || process.code?.includes("[AJUSTADO]");
+  const isAjustado = process.name?.includes("[AJUSTADO]") || process.code?.includes("[AJUSTADO]") || process.cliente?.includes("[AJUSTADO]");
 
   return (
     <div
