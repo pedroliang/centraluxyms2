@@ -16,7 +16,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Supabase CLI
-        run: npm install supabase --save-dev
+        run: |
+          SUPABASE_TAG=$(curl -s https://api.github.com/repos/supabase/cli/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+          SUPABASE_VERSION=${SUPABASE_TAG#v}
+          wget -q "https://github.com/supabase/cli/releases/download/${SUPABASE_TAG}/supabase_${SUPABASE_VERSION}_linux_amd64.deb" -O /tmp/supabase.deb
+          sudo dpkg -i /tmp/supabase.deb
+          supabase --version
 
       - name: Link Supabase project
         run: npx supabase link --project-ref lbqprihivhehutomrzbr --password "$SUPABASE_DB_PASSWORD"
