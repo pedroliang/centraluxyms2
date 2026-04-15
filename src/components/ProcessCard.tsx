@@ -21,6 +21,7 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
   const status = statusConfig[process.status];
   const dateFormatted = process.date.split('T')[0].split('-').reverse().join('/');
   const isAjustado = process.name?.includes("[AJUSTADO]") || process.code?.includes("[AJUSTADO]") || process.cliente?.includes("[AJUSTADO]");
+  const isSPtoBrasilia = process.origin?.toUpperCase().includes("SÃO PAULO") && process.destination?.toUpperCase().includes("BRASÍLIA");
 
   return (
     <div
@@ -28,6 +29,8 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
         "group relative rounded-lg border bg-card p-4 shadow-card transition-all",
         isAjustado
           ? "ajustado-neon-border"
+          : isSPtoBrasilia
+          ? "sp-brasilia-neon-border"
           : selected
           ? "border-primary ring-2 ring-primary/20"
           : "border-border hover:border-primary/30"
