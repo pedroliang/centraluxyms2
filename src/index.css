@@ -158,4 +158,22 @@
       0 0 32px rgba(255, 106, 0, 0.6),
       inset 0 0 6px rgba(255, 106, 0, 0.12);
   }
+
+  /* Borda neon azul para processos Brasília → São Paulo */
+  .brasilia-sp-neon-border {
+    border-color: #00b4ff !important;
+    box-shadow:
+      0 0 4px #00b4ff,
+      0 0 10px #00b4ff,
+      0 0 20px rgba(0, 180, 255, 0.5),
+      inset 0 0 4px rgba(0, 180, 255, 0.08);
+  }
+
+  .brasilia-sp-neon-border:hover {
+    box-shadow:
+      0 0 6px #00b4ff,
+      0 0 16px #00b4ff,
+      0 0 32px rgba(0, 180, 255, 0.6),
+      inset 0 0 6px rgba(0, 180, 255, 0.12);
+  }
 }
