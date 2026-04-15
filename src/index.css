@@ -176,4 +176,22 @@
       0 0 32px rgba(0, 180, 255, 0.6),
       inset 0 0 6px rgba(0, 180, 255, 0.12);
   }
+
+  /* Borda neon verde para processos Porto → São Paulo */
+  .porto-sp-neon-border {
+    border-color: #00ff6a !important;
+    box-shadow:
+      0 0 4px #00ff6a,
+      0 0 10px #00ff6a,
+      0 0 20px rgba(0, 255, 106, 0.5),
+      inset 0 0 4px rgba(0, 255, 106, 0.08);
+  }
+
+  .porto-sp-neon-border:hover {
+    box-shadow:
+      0 0 6px #00ff6a,
+      0 0 16px #00ff6a,
+      0 0 32px rgba(0, 255, 106, 0.6),
+      inset 0 0 6px rgba(0, 255, 106, 0.12);
+  }
 }

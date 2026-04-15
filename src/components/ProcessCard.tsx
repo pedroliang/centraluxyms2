@@ -23,6 +23,7 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
   const isAjustado = process.name?.includes("[AJUSTADO]") || process.code?.includes("[AJUSTADO]") || process.cliente?.includes("[AJUSTADO]");
   const isSPtoBrasilia = process.origin?.toUpperCase().includes("SÃO PAULO") && process.destination?.toUpperCase().includes("BRASÍLIA");
   const isBrasiliaToSP = process.origin?.toUpperCase().includes("BRASÍLIA") && process.destination?.toUpperCase().includes("SÃO PAULO");
+  const isPortoToSP = process.origin?.toUpperCase().includes("PORTO") && process.destination?.toUpperCase().includes("SÃO PAULO");
 
   return (
     <div
@@ -34,6 +35,8 @@ export function ProcessCard({ process, selected, onToggleSelect }: ProcessCardPr
           ? "sp-brasilia-neon-border"
           : isBrasiliaToSP
           ? "brasilia-sp-neon-border"
+          : isPortoToSP
+          ? "porto-sp-neon-border"
           : selected
           ? "border-primary ring-2 ring-primary/20"
           : "border-border hover:border-primary/30"
