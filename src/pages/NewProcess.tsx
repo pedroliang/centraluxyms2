@@ -20,7 +20,28 @@ export default function NewProcess() {
 
   const existingProcess = useMemo(() => processes.find(p => p.id === id), [processes, id]);
 
-  const [name, setName] = useState(existingProcess?.name || "Carreta");
+  const vehicleOptions = [
+    "Carreta",
+    "Contêiner",
+    "Caminhão 3/4",
+    "Caminhão Toco",
+    "Caminhão Truck",
+    "Caminhão Bitrem",
+    "Caminhão Rodotrem",
+    "Caminhão Sider",
+    "Caminhão Baú",
+    "Fiorino / Van",
+  ];
+
+  const [selectedVehicle, setSelectedVehicle] = useState(() => {
+    if (!existingProcess) return "Carreta";
+    return vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "Outros";
+  });
+
+  const [customVehicle, setCustomVehicle] = useState(
+    existingProcess && !vehicleOptions.includes(existingProcess.name) ? existingProcess.name : ""
+  );
+
   const [code, setCode] = useState(existingProcess?.code || "");
   const [date, setDate] = useState<Date>(existingProcess ? parseISO(existingProcess.date) : new Date());
   const [type, setType] = useState<ProcessType>(existingProcess?.type || "unloading");
@@ -32,7 +53,8 @@ export default function NewProcess() {
 
   useEffect(() => {
     if (existingProcess) {
-      setName(existingProcess.name);
+      setSelectedVehicle(vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "Outros");
+      setCustomVehicle(!vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "");
       setCode(existingProcess.code);
       setDate(parseISO(existingProcess.date));
       setType(existingProcess.type);
@@ -43,9 +65,11 @@ export default function NewProcess() {
   }, [existingProcess]);
 
   const handleSave = () => {
-    if (!name.trim() || !code.trim()) return;
+    const finalName = selectedVehicle === "Outros" ? customVehicle : selectedVehicle;
+    if (!finalName.trim() || !code.trim()) return;
+
     const processData = {
-      name: name.trim(),
+      name: finalName.trim(),
       code: code.trim().toUpperCase(),
       date: format(date, "yyyy-MM-dd"),
       type,
@@ -86,12 +110,26 @@ export default function NewProcess() {
       <div className="p-6 max-w-2xl">
         <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Veículo</label>
-              <select value={name} onChange={(e) => setName(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <option value="Carreta">Carreta</option>
-                <option value="Contêiner">Contêiner</option>
+              <select 
+                value={selectedVehicle} 
+                onChange={(e) => setSelectedVehicle(e.target.value)} 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {vehicleOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+                <option value="Outros">Outros (Especificar)</option>
               </select>
+              {selectedVehicle === "Outros" && (
+                <Input 
+                  value={customVehicle} 
+                  onChange={(e) => setCustomVehicle(e.target.value)} 
+                  placeholder="Nome do veículo..." 
+                  className="mt-2"
+                />
+              )}
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Processo/Código</label>
@@ -106,6 +144,10 @@ export default function NewProcess() {
                 <option value="Brasília">Brasília</option>
                 <option value="São Paulo">São Paulo</option>
                 <option value="Porto">Porto</option>
+                <option value="Extrema">Extrema</option>
+                <option value="Jundiaí">Jundiaí</option>
+                <option value="Curitiba">Curitiba</option>
+                <option value="Itajaí">Itajaí</option>
               </select>
             </div>
             <div>
@@ -114,6 +156,10 @@ export default function NewProcess() {
                 <option value="Brasília">Brasília</option>
                 <option value="São Paulo">São Paulo</option>
                 <option value="Porto">Porto</option>
+                <option value="Extrema">Extrema</option>
+                <option value="Jundiaí">Jundiaí</option>
+                <option value="Curitiba">Curitiba</option>
+                <option value="Itajaí">Itajaí</option>
               </select>
             </div>
           </div>
