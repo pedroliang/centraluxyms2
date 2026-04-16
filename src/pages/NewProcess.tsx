@@ -23,25 +23,10 @@ export default function NewProcess() {
   const vehicleOptions = [
     "Carreta",
     "Contêiner",
-    "Caminhão 3/4",
-    "Caminhão Toco",
-    "Caminhão Truck",
-    "Caminhão Bitrem",
-    "Caminhão Rodotrem",
-    "Caminhão Sider",
-    "Caminhão Baú",
-    "Fiorino / Van",
+    "Van/Fiorino",
   ];
 
-  const [selectedVehicle, setSelectedVehicle] = useState(() => {
-    if (!existingProcess) return "Carreta";
-    return vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "Outros";
-  });
-
-  const [customVehicle, setCustomVehicle] = useState(
-    existingProcess && !vehicleOptions.includes(existingProcess.name) ? existingProcess.name : ""
-  );
-
+  const [name, setName] = useState(existingProcess?.name || "Carreta");
   const [code, setCode] = useState(existingProcess?.code || "");
   const [date, setDate] = useState<Date>(existingProcess ? parseISO(existingProcess.date) : new Date());
   const [type, setType] = useState<ProcessType>(existingProcess?.type || "unloading");
@@ -53,8 +38,7 @@ export default function NewProcess() {
 
   useEffect(() => {
     if (existingProcess) {
-      setSelectedVehicle(vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "Outros");
-      setCustomVehicle(!vehicleOptions.includes(existingProcess.name) ? existingProcess.name : "");
+      setName(existingProcess.name);
       setCode(existingProcess.code);
       setDate(parseISO(existingProcess.date));
       setType(existingProcess.type);
@@ -65,11 +49,10 @@ export default function NewProcess() {
   }, [existingProcess]);
 
   const handleSave = () => {
-    const finalName = selectedVehicle === "Outros" ? customVehicle : selectedVehicle;
-    if (!finalName.trim() || !code.trim()) return;
+    if (!name.trim() || !code.trim()) return;
 
     const processData = {
-      name: finalName.trim(),
+      name: name.trim(),
       code: code.trim().toUpperCase(),
       date: format(date, "yyyy-MM-dd"),
       type,
@@ -113,23 +96,14 @@ export default function NewProcess() {
             <div className="space-y-2">
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Veículo</label>
               <select 
-                value={selectedVehicle} 
-                onChange={(e) => setSelectedVehicle(e.target.value)} 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {vehicleOptions.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-                <option value="Outros">Outros (Especificar)</option>
               </select>
-              {selectedVehicle === "Outros" && (
-                <Input 
-                  value={customVehicle} 
-                  onChange={(e) => setCustomVehicle(e.target.value)} 
-                  placeholder="Nome do veículo..." 
-                  className="mt-2"
-                />
-              )}
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Processo/Código</label>
