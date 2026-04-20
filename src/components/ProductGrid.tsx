@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
 import { SmartCodeInput } from "./SmartCodeInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit3, Check, FileUp, Image as ImageIcon, Download, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit3, Check, FileUp, Image as ImageIcon, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import * as XLSX from "xlsx";
 import { createWorker } from "tesseract.js";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+type SortDirection = "asc" | "desc" | null;
+type SortField = "item" | "code" | "description" | "qtyUnit" | "qtyUnitSP" | "qtyUnitDF" | "qtyBoxes" | "qtyBoxesSP" | "qtyBoxesDF" | "qtyPerBox" | "lote";
 
 interface ProductGridProps {
   processId: string;
@@ -327,6 +330,56 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   // Inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Sorting
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === "asc") setSortDirection("desc");
+      else if (sortDirection === "desc") { setSortField(null); setSortDirection(null); }
+      else setSortDirection("asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedProducts = useMemo(() => {
+    if (!sortField || !sortDirection) return products;
+    return [...products].sort((a, b) => {
+      // Sort by original insertion order
+      if (sortField === "item") {
+        const idxA = products.indexOf(a);
+        const idxB = products.indexOf(b);
+        return sortDirection === "asc" ? idxA - idxB : idxB - idxA;
+      }
+      let valA: any = a[sortField];
+      let valB: any = b[sortField];
+      // Handle string vs number
+      if (typeof valA === "string" && typeof valB === "string") {
+        const cmp = valA.localeCompare(valB, "pt-BR", { sensitivity: "base" });
+        return sortDirection === "asc" ? cmp : -cmp;
+      }
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    });
+  }, [products, sortField, sortDirection]);
+
+  // Map to preserve original insertion order index
+  const originalIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    products.forEach((p, i) => map.set(p.id, i + 1));
+    return map;
+  }, [products]);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-30" />;
+    if (sortDirection === "asc") return <ArrowUp className="h-3 w-3 ml-1 text-primary" />;
+    return <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
+  };
+
   const handleInlineUpdate = (prod: Product, field: keyof Product, value: any) => {
     const num = Number(value);
     if (isNaN(num)) return;
@@ -501,21 +554,22 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Descrição</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd Total</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Qtd. Unit. SP">Unt. SP</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Qtd. Unit. DF">Unt. DF</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider" title="Total Caixas">Caixas</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider" title="Caixas SP">Cx. SP</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider" title="Caixas DF">Cx. DF</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qtd/Cx</th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Lote</th>
+                <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider w-14 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("item")}><span className="inline-flex items-center justify-center">#<SortIcon field="item" /></span></th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("code")}><span className="inline-flex items-center">Código<SortIcon field="code" /></span></th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("description")}><span className="inline-flex items-center">Descrição<SortIcon field="description" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("qtyUnit")}><span className="inline-flex items-center justify-end">Qtd Total<SortIcon field="qtyUnit" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider cursor-pointer select-none hover:text-blue-400 transition-colors" title="Qtd. Unit. SP" onClick={() => handleSort("qtyUnitSP")}><span className="inline-flex items-center justify-end">Unt. SP<SortIcon field="qtyUnitSP" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider cursor-pointer select-none hover:text-orange-300 transition-colors" title="Qtd. Unit. DF" onClick={() => handleSort("qtyUnitDF")}><span className="inline-flex items-center justify-end">Unt. DF<SortIcon field="qtyUnitDF" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" title="Total Caixas" onClick={() => handleSort("qtyBoxes")}><span className="inline-flex items-center justify-end">Caixas<SortIcon field="qtyBoxes" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-blue-600 uppercase tracking-wider cursor-pointer select-none hover:text-blue-400 transition-colors" title="Caixas SP" onClick={() => handleSort("qtyBoxesSP")}><span className="inline-flex items-center justify-end">Cx. SP<SortIcon field="qtyBoxesSP" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-orange-500 uppercase tracking-wider cursor-pointer select-none hover:text-orange-300 transition-colors" title="Caixas DF" onClick={() => handleSort("qtyBoxesDF")}><span className="inline-flex items-center justify-end">Cx. DF<SortIcon field="qtyBoxesDF" /></span></th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("qtyPerBox")}><span className="inline-flex items-center justify-end">Qtd/Cx<SortIcon field="qtyPerBox" /></span></th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort("lote")}><span className="inline-flex items-center">Lote<SortIcon field="lote" /></span></th>
                 <th className="px-4 py-2.5 w-20"></th>
               </tr>
             </thead>
             <tbody>
-              {products.map((prod, i) => (
+              {sortedProducts.map((prod, i) => (
                 <tr
                   key={prod.id}
                   className={cn(
@@ -524,6 +578,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                     prod.isManual && "bg-warning/5"
                   )}
                 >
+                  <td className="px-3 py-2.5 text-center text-[11px] font-medium text-muted-foreground tabular-nums">{originalIndexMap.get(prod.id)}</td>
                   <td className="px-4 py-2.5 font-mono font-semibold text-foreground">{prod.code}</td>
                   <td className="px-4 py-2.5 text-foreground max-w-[150px] truncate" title={prod.description}>
                     {editingId === prod.id ? (
@@ -633,6 +688,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/50">
+                <td className="px-3 py-2.5"></td>
                 <td colSpan={2} className="px-4 py-2.5 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-foreground">{totalQtyUnit}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-bold text-blue-600">{totalQtyUnitSP}</td>
