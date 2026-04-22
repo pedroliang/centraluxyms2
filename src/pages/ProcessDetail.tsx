@@ -48,7 +48,7 @@ export default function ProcessDetail() {
     margin: "standard" | "none" | "slim",
     columns: string[]
   }>({ 
-    orientation: "portrait", 
+    orientation: "landscape", 
     color: "color", 
     margin: "standard",
     columns: []
@@ -177,7 +177,7 @@ export default function ProcessDetail() {
         @media print { 
           body { margin: ${printConfig.margin === 'none' ? '0' : '20px'}; } 
           @page { 
-            size: ${printConfig.orientation}; 
+            size: A4 ${printConfig.orientation}; 
             margin: ${printConfig.margin === 'standard' ? '15mm' : printConfig.margin === 'slim' ? '5mm' : '0mm'}; 
           }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -348,17 +348,26 @@ export default function ProcessDetail() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="orientation" className="text-right">Orientação</Label>
-              <div className="col-span-3">
-                <Select value={printConfig.orientation} onValueChange={(v: "portrait" | "landscape") => setPrintConfig(prev => ({ ...prev, orientation: v }))}>
-                  <SelectTrigger id="orientation">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="portrait">Retrato</SelectItem>
-                    <SelectItem value="landscape">Paisagem</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Label className="text-right">Orientação</Label>
+              <div className="col-span-3 flex gap-2">
+                <Button 
+                  type="button"
+                  variant={printConfig.orientation === 'portrait' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPrintConfig(prev => ({ ...prev, orientation: 'portrait' }))}
+                >
+                  Retrato
+                </Button>
+                <Button 
+                  type="button"
+                  variant={printConfig.orientation === 'landscape' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPrintConfig(prev => ({ ...prev, orientation: 'landscape' }))}
+                >
+                  Paisagem
+                </Button>
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
