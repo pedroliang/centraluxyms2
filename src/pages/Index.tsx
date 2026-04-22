@@ -14,6 +14,21 @@ import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const PRINT_COLUMNS = [
+  { id: 'code', label: 'Código' },
+  { id: 'description', label: 'Descrição' },
+  { id: 'qtyUnit', label: 'Q.Unit' },
+  { id: 'qtyUnitSP', label: 'Unt. SP' },
+  { id: 'qtyUnitDF', label: 'Unt. DF' },
+  { id: 'qtyBoxes', label: 'Caixas' },
+  { id: 'qtyBoxesSP', label: 'Cx. SP' },
+  { id: 'qtyBoxesDF', label: 'Cx. DF' },
+  { id: 'qtyPerBox', label: 'Q/Cx' },
+  { id: 'lote', label: 'Lote' },
+];
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -26,7 +41,18 @@ export default function Dashboard() {
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
   const [printActionType, setPrintActionType] = useState<"pdf" | "print" | null>(null);
-  const [printConfig, setPrintConfig] = useState<{ orientation: "portrait" | "landscape", color: "color" | "bw", margin: "standard" | "none" | "slim" }>({ orientation: "portrait", color: "color", margin: "standard" });
+  const [printConfig, setPrintConfig] = useState<{ 
+    orientation: "portrait" | "landscape", 
+    color: "color" | "bw", 
+    margin: "standard" | "none" | "slim",
+    columns: string[]
+  }>({ 
+    orientation: "portrait", 
+    color: "color", 
+    margin: "standard",
+    columns: []
+  });
+
 
   useEffect(() => {
     fetchProcesses();
@@ -91,6 +117,10 @@ export default function Dashboard() {
         <h1>CENTRALUX YMS</h1>
         <p style="font-size:12px;color:#666;">Gerado em: ${new Date().toLocaleString("pt-BR")}</p>
         ${toPrint.map(p => {
+          const activeCols = printConfig.columns.length > 0 
+            ? PRINT_COLUMNS.filter(c => printConfig.columns.includes(c.id))
+            : PRINT_COLUMNS;
+
           return `
           <div class="process">
             <div class="process-header" style="border-bottom: 2px solid #2563eb;">
@@ -101,38 +131,39 @@ export default function Dashboard() {
               </span>
             </div>
             <table>
-              <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th></tr></thead>
+              <thead>
+                <tr>
+                  ${activeCols.map(c => `<th>${c.label}</th>`).join("")}
+                </tr>
+              </thead>
               <tbody>
                 ${p.products.map(prod => `
                   <tr>
-                    <td class="code">${prod.code}</td>
-                    <td>${prod.description.length > 30 ? prod.description.substring(0,27) + "..." : prod.description}</td>
-                    <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
-                    <td class="num">${prod.qtyUnitSP || "—"}</td>
-                    <td class="num">${prod.qtyUnitDF || "—"}</td>
-                    <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
-                    <td class="num">${prod.qtyBoxesSP || "—"}</td>
-                    <td class="num">${prod.qtyBoxesDF || "—"}</td>
-                    <td class="num">${prod.qtyPerBox}</td>
-                    <td>${prod.lote || "—"}</td>
+                    ${activeCols.map(c => {
+                      const val = (prod as any)[c.id];
+                      const isNum = typeof val === 'number';
+                      const isCode = c.id === 'code';
+                      return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;
+                    }).join("")}
                   </tr>
                 `).join("")}
               </tbody>
               <tfoot>
                 <tr style="background: #f8faff; font-weight: bold;">
-                  <td colspan="2" style="text-align: right;">TOTAL</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnit || 0), 0)}</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnitSP || 0), 0) || "—"}</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyUnitDF || 0), 0) || "—"}</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxes || 0), 0)}</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxesSP || 0), 0) || "—"}</td>
-                  <td class="num">${p.products.reduce((s, prod) => s + (prod.qtyBoxesDF || 0), 0) || "—"}</td>
-                  <td colspan="2"></td>
+                  <td colspan="${activeCols.findIndex(c => c.id.startsWith('qty')) || 1}" style="text-align: right;">TOTAL</td>
+                  ${activeCols.slice(activeCols.findIndex(c => c.id.startsWith('qty')) || 1).map(c => {
+                    if (c.id.startsWith('qty') && c.id !== 'qtyPerBox') {
+                      const total = p.products.reduce((s, prod) => s + (Number((prod as any)[c.id]) || 0), 0);
+                      return `<td class="num">${total || "—"}</td>`;
+                    }
+                    return `<td></td>`;
+                  }).join("")}
                 </tr>
               </tfoot>
             </table>
           </div>
         `; }).join("")}
+
       </div>
       <script>
         window.onload = function() {
@@ -197,6 +228,10 @@ export default function Dashboard() {
       <h1>CENTRALUX YMS</h1>
       <p style="font-size:12px;color:#666;">Impresso em: ${new Date().toLocaleString("pt-BR")}</p>
       ${toPrint.map(p => {
+        const activeCols = printConfig.columns.length > 0 
+          ? PRINT_COLUMNS.filter(c => printConfig.columns.includes(c.id))
+          : PRINT_COLUMNS;
+
         return `
         <div class="process">
           <div class="process-header" style="border-bottom: 2px solid #2563eb;">
@@ -207,27 +242,40 @@ export default function Dashboard() {
             </span>
           </div>
           <table>
-            <thead><tr><th>Código</th><th>Descrição</th><th>Q.Unit</th><th>Unt. SP</th><th>Unt. DF</th><th>Caixas</th><th>Cx. SP</th><th>Cx. DF</th><th>Q/Cx</th><th>Lote</th></tr></thead>
+            <thead>
+              <tr>
+                ${activeCols.map(c => `<th>${c.label}</th>`).join("")}
+              </tr>
+            </thead>
             <tbody>
               ${p.products.map(prod => `
                 <tr>
-                  <td class="code">${prod.code}</td>
-                  <td>${prod.description}</td>
-                  <td class="num" style="font-weight:bold;">${prod.qtyUnit}</td>
-                  <td class="num">${prod.qtyUnitSP || "—"}</td>
-                  <td class="num">${prod.qtyUnitDF || "—"}</td>
-                  <td class="num" style="font-weight:bold;">${prod.qtyBoxes}</td>
-                  <td class="num">${prod.qtyBoxesSP || "—"}</td>
-                  <td class="num">${prod.qtyBoxesDF || "—"}</td>
-                  <td class="num">${prod.qtyPerBox}</td>
-                  <td>${prod.lote || "—"}</td>
+                  ${activeCols.map(c => {
+                    const val = (prod as any)[c.id];
+                    const isNum = typeof val === 'number';
+                    const isCode = c.id === 'code';
+                    return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;
+                  }).join("")}
                 </tr>
               `).join("")}
             </tbody>
+            <tfoot>
+                <tr style="background: #f8faff; font-weight: bold;">
+                  <td colspan="${activeCols.findIndex(c => c.id.startsWith('qty')) || 1}" style="text-align: right;">TOTAL</td>
+                  ${activeCols.slice(activeCols.findIndex(c => c.id.startsWith('qty')) || 1).map(c => {
+                    if (c.id.startsWith('qty') && c.id !== 'qtyPerBox') {
+                      const total = p.products.reduce((s, prod) => s + (Number((prod as any)[c.id]) || 0), 0);
+                      return `<td class="num">${total || "—"}</td>`;
+                    }
+                    return `<td></td>`;
+                  }).join("")}
+                </tr>
+              </tfoot>
           </table>
         </div>
         `;
       }).join("")}
+
       </body></html>
     `;
     printWindow.document.write(html);
@@ -442,7 +490,36 @@ export default function Dashboard() {
                 </Select>
               </div>
             </div>
+            <div className="border-t pt-4 mt-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Colunas para exibir</Label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {PRINT_COLUMNS.map(col => (
+                  <div key={col.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`col-${col.id}`} 
+                      checked={printConfig.columns.includes(col.id)}
+                      onCheckedChange={(checked) => {
+                        setPrintConfig(prev => ({
+                          ...prev,
+                          columns: checked 
+                            ? [...prev.columns, col.id]
+                            : prev.columns.filter(c => c !== col.id)
+                        }));
+                      }}
+                    />
+                    <label 
+                      htmlFor={`col-${col.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {col.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 italic">* Se nenhuma for escolhida, todas serão impressas.</p>
+            </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setPrintConfigOpen(false)}>Cancelar</Button>
             <Button type="button" onClick={() => {
