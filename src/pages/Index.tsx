@@ -99,10 +99,12 @@ export default function Dashboard() {
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: ${printConfig.margin === 'standard' ? '20mm' : printConfig.margin === 'slim' ? '10mm' : '0'}; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
-        .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
+        .process { margin-bottom: 32px; display: block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
         .code { font-family: monospace; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: auto; }
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
         tr { page-break-inside: avoid; break-inside: avoid; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
         th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
@@ -204,10 +206,12 @@ export default function Dashboard() {
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: ${printConfig.margin === 'standard' ? '20mm' : printConfig.margin === 'slim' ? '10mm' : '0'}; color: #1a1a2e; }
         h1 { font-size: 18px; margin-bottom: 8px; }
-        .process { margin-bottom: 32px; page-break-inside: avoid; break-inside: avoid; display: inline-block; width: 100%; }
+        .process { margin-bottom: 32px; display: block; width: 100%; }
         .process-header { border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; margin-bottom: 12px; }
         .code { font-family: monospace; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: auto; }
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
         tr { page-break-inside: avoid; break-inside: avoid; }
         th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
         th { background: #f0f4ff !important; font-weight: 600; color: #1a1a2e; }
@@ -216,7 +220,7 @@ export default function Dashboard() {
         .status-active { background: #eef2ff !important; color: #2563eb !important; }
         .status-completed { background: #f0fdf4 !important; color: #16a34a !important; }
         @media print { 
-          body { margin: ${printConfig.margin === 'none' ? '0' : '20px'}; } 
+          body { margin: 0; } 
           @page { 
             size: A4 ${printConfig.orientation}; 
             margin: ${printConfig.margin === 'standard' ? '15mm' : printConfig.margin === 'slim' ? '5mm' : '0mm'}; 
