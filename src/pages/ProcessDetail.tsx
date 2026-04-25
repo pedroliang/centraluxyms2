@@ -4,14 +4,9 @@ import { AppLayout } from "@/components/AppLayout";
 import { ProductGrid } from "@/components/ProductGrid";
 import { useProcessStore } from "@/stores/processStore";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { FileText } from "lucide-react";
+import { ArrowLeft, Printer, CheckCircle, FileSpreadsheet, FileText } from "lucide-react";
+import { utils, writeFile } from "xlsx";
+
 
 const PRINT_COLUMNS = [
   { id: 'code', label: 'Código' },
@@ -41,7 +36,8 @@ export default function ProcessDetail() {
 
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
-  const [printActionType, setPrintActionType] = useState<"pdf" | "print" | null>(null);
+  const [printActionType, setPrintActionType] = useState<"pdf" | "print" | "excel" | null>(null);
+
   const [printConfig, setPrintConfig] = useState<{ 
     orientation: "portrait" | "landscape", 
     color: "color" | "bw", 
@@ -153,6 +149,44 @@ export default function ProcessDetail() {
     pdfWindow.document.write(html);
     pdfWindow.document.close();
   };
+
+  const handleGenerateExcel = () => {
+    if (!process) return;
+
+    const activeCols = printConfig.columns.length > 0 
+      ? PRINT_COLUMNS.filter(c => printConfig.columns.includes(c.id))
+      : PRINT_COLUMNS;
+
+    const data = process.products.map(prod => {
+      const row: any = {};
+      activeCols.forEach(col => {
+        row[col.label] = (prod as any)[col.id] || "";
+      });
+      return row;
+    });
+
+    // Add totals row
+    const totalsRow: any = {};
+    const firstColIndex = activeCols.findIndex(c => c.id.startsWith('qty'));
+    const totalLabelKey = firstColIndex > 0 ? activeCols[firstColIndex - 1].label : activeCols[0].label;
+    totalsRow[totalLabelKey] = "TOTAL";
+    
+    activeCols.forEach(col => {
+      if (col.id.startsWith('qty') && col.id !== 'qtyPerBox') {
+        const total = process.products.reduce((s, prod) => s + (Number((prod as any)[col.id]) || 0), 0);
+        totalsRow[col.label] = total;
+      }
+    });
+    data.push(totalsRow);
+
+    const ws = utils.json_to_sheet(data);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Processo");
+    
+    writeFile(wb, `Centralux_Processo_${process.code}_${new Date().getTime()}.xlsx`);
+    toast.success("Excel gerado com sucesso!");
+  };
+
 
   const handlePrint = () => {
     if (!process) return;
@@ -294,6 +328,16 @@ export default function ProcessDetail() {
               <Button 
                 variant="outline" 
                 size="sm" 
+                onClick={() => { setPrintActionType('excel'); setPrintConfigOpen(true); }} 
+                className="gap-2 border-green-600/20 hover:bg-green-600/5 text-green-600 h-8"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Excel
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
                 onClick={() => { setPrintActionType('print'); setPrintConfigOpen(true); }} 
                 className="gap-2 h-8"
               >
@@ -345,11 +389,16 @@ export default function ProcessDetail() {
       <Dialog open={printConfigOpen} onOpenChange={setPrintConfigOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{printActionType === 'pdf' ? "Configurações do PDF" : "Configurações de Impressão"}</DialogTitle>
+            <DialogTitle>
+              {printActionType === 'pdf' ? "Configurações do PDF" : 
+               printActionType === 'excel' ? "Configurações do Excel" : 
+               "Configurações de Impressão"}
+            </DialogTitle>
             <DialogDescription>
               Ajuste o layout e as colunas antes de confirmar.
             </DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Orientação</Label>
@@ -438,7 +487,9 @@ export default function ProcessDetail() {
             <Button type="button" onClick={() => {
               setPrintConfigOpen(false);
               if (printActionType === 'pdf') handleGeneratePDF();
+              else if (printActionType === 'excel') handleGenerateExcel();
               else if (printActionType === 'print') handlePrint();
+
             }}>
               Confirmar
             </Button>

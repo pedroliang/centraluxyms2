@@ -10,11 +10,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit } from "lucide-react";
+import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { utils, writeFile } from "xlsx";
+import { toast } from "sonner";
+
 
 const PRINT_COLUMNS = [
   { id: 'code', label: 'Código' },
@@ -40,7 +43,8 @@ export default function Dashboard() {
 
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
-  const [printActionType, setPrintActionType] = useState<"pdf" | "print" | null>(null);
+  const [printActionType, setPrintActionType] = useState<"pdf" | "print" | "excel" | null>(null);
+
   const [printConfig, setPrintConfig] = useState<{ 
     orientation: "portrait" | "landscape", 
     color: "color" | "bw", 
@@ -194,6 +198,55 @@ export default function Dashboard() {
     pdfWindow.document.write(html);
     pdfWindow.document.close();
   };
+
+  const handleGenerateExcel = () => {
+    const toExport = processes.filter((p) => selectedIds.includes(p.id));
+    const activeCols = printConfig.columns.length > 0 
+      ? PRINT_COLUMNS.filter(c => printConfig.columns.includes(c.id))
+      : PRINT_COLUMNS;
+
+    const allData: any[] = [];
+
+    toExport.forEach(p => {
+      // Add a header row for each process if multiple
+      if (toExport.length > 1) {
+        allData.push({ [activeCols[0].label]: `PROCESSO: ${p.code} - ${p.name}` });
+      }
+
+      p.products.forEach(prod => {
+        const row: any = {};
+        activeCols.forEach(col => {
+          row[col.label] = (prod as any)[col.id] || "";
+        });
+        allData.push(row);
+      });
+
+      // Add totals row for each process
+      const totalsRow: any = {};
+      const firstColIndex = activeCols.findIndex(c => c.id.startsWith('qty'));
+      const totalLabelKey = firstColIndex > 0 ? activeCols[firstColIndex - 1].label : activeCols[0].label;
+      totalsRow[totalLabelKey] = "TOTAL";
+      
+      activeCols.forEach(col => {
+        if (col.id.startsWith('qty') && col.id !== 'qtyPerBox') {
+          const total = p.products.reduce((s, prod) => s + (Number((prod as any)[col.id]) || 0), 0);
+          totalsRow[col.label] = total;
+        }
+      });
+      allData.push(totalsRow);
+      
+      // Add empty row separator
+      allData.push({});
+    });
+
+    const ws = utils.json_to_sheet(allData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Processos");
+    
+    writeFile(wb, `Centralux_Processos_${new Date().getTime()}.xlsx`);
+    toast.success("Excel gerado com sucesso!");
+  };
+
 
   const handlePrint = () => {
     const toPrint = processes.filter((p) => selectedIds.includes(p.id));
@@ -406,10 +459,15 @@ export default function Dashboard() {
                 <FileText className="h-4 w-4" />
                 Gerar PDF ({selectedIds.length})
               </Button>
+              <Button variant="outline" onClick={() => { setPrintActionType('excel'); setPrintConfigOpen(true); }} className="gap-2 border-green-600/20 hover:bg-green-600/5 text-green-600">
+                <FileSpreadsheet className="h-4 w-4" />
+                Gerar Excel ({selectedIds.length})
+              </Button>
               <Button variant="outline" onClick={() => { setPrintActionType('print'); setPrintConfigOpen(true); }} className="gap-2">
                 <Printer className="h-4 w-4" />
                 Imprimir ({selectedIds.length})
               </Button>
+
             </div>
           )}
         </div>
@@ -445,11 +503,16 @@ export default function Dashboard() {
       <Dialog open={printConfigOpen} onOpenChange={setPrintConfigOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{printActionType === 'pdf' ? "Configurações do PDF" : "Configurações de Impressão"}</DialogTitle>
+            <DialogTitle>
+              {printActionType === 'pdf' ? "Configurações do PDF" : 
+               printActionType === 'excel' ? "Configurações do Excel" : 
+               "Configurações de Impressão"}
+            </DialogTitle>
             <DialogDescription>
               Ajuste o layout e as cores antes de confirmar.
             </DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Orientação</Label>
@@ -538,7 +601,9 @@ export default function Dashboard() {
             <Button type="button" onClick={() => {
               setPrintConfigOpen(false);
               if (printActionType === 'pdf') handleGeneratePDF();
+              else if (printActionType === 'excel') handleGenerateExcel();
               else if (printActionType === 'print') handlePrint();
+
             }}>
               Confirmar
             </Button>
