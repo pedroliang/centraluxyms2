@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit, FileSpreadsheet, Database } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -247,6 +247,20 @@ export default function Dashboard() {
     toast.success("Excel gerado com sucesso!");
   };
 
+  const handleExportJSON = () => {
+    if (processes.length === 0) {
+      toast.error("Não há dados para exportar.");
+      return;
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(processes, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `Centralux_Backup_${new Date().getTime()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    toast.success("Backup local (JSON) gerado com sucesso!");
+  };
 
   const handlePrint = () => {
     const toPrint = processes.filter((p) => selectedIds.includes(p.id));
@@ -363,12 +377,18 @@ export default function Dashboard() {
       <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold tracking-heading text-foreground">Gestão de Fluxo de Pátio</h1>
-          <Link to="/processo/novo">
-            <Button>
-              <Plus className="h-4 w-4 mr-1.5" />
-              Novo Processo
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportJSON} className="gap-2 border-blue-600/20 hover:bg-blue-600/5 text-blue-600">
+              <Database className="h-4 w-4" />
+              Backup Local
             </Button>
-          </Link>
+            <Link to="/processo/novo">
+              <Button>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Novo Processo
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}
