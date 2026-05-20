@@ -78,3 +78,72 @@ export async function fetchGoogleSheetProducts(): Promise<Record<string, Product
     return {};
   }
 }
+
+/**
+ * Normaliza e busca a descrição de um código de produto no catálogo do Google Sheets.
+ * Trata variações como sufixos entre parênteses, espaços ou letras extras.
+ */
+export function getFallbackDescription(
+  code: string,
+  catalog: Record<string, { description: string }>
+): string | null {
+  if (!catalog || !code) return null;
+  
+  const upperCode = code.trim().toUpperCase();
+  
+  // 1. Busca direta (ex: "7349")
+  if (catalog[upperCode]?.description) {
+    return catalog[upperCode].description;
+  }
+  
+  // 2. Remove parênteses e conteúdo dentro, ex: "7349 (D)" ou "7349 (H)" -> "7349"
+  const withoutParentheses = upperCode.replace(/\s*\(.*\)/g, "").trim();
+  if (catalog[withoutParentheses]?.description) {
+    return catalog[withoutParentheses].description;
+  }
+  
+  // 3. Pega apenas a primeira palavra/token, ex: "7349 D" -> "7349"
+  const firstWord = upperCode.split(/\s+/)[0].trim();
+  if (catalog[firstWord]?.description) {
+    return catalog[firstWord].description;
+  }
+  
+  // 4. Remove uma única letra no final de código numérico, ex: "7349D" -> "7349"
+  const numericMatch = upperCode.match(/^(\d+)[A-Z]$/);
+  if (numericMatch) {
+    const baseCode = numericMatch[1];
+    if (catalog[baseCode]?.description) {
+      return catalog[baseCode].description;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Retorna a descrição a ser exibida. Se a descrição atual for vazia ou for um marcador
+ * padrão ("Importado", "Sem descrição"), tenta buscar o fallback no catálogo do Google Sheets.
+ */
+export function resolveDescription(
+  currentDescription: string | undefined,
+  code: string,
+  catalog: Record<string, { description: string }>
+): string {
+  const desc = currentDescription?.trim();
+  const hasNoDescription = 
+    !desc || 
+    desc === "Importado" || 
+    desc === "Sem descrição" || 
+    desc === "Sem descrio" || 
+    desc === "Sem descriï¿½ï¿½o" || 
+    desc === "Sem descrio" ||
+    desc === "Sem descrio";
+    
+  if (hasNoDescription && catalog) {
+    const fallback = getFallbackDescription(code, catalog);
+    if (fallback) return fallback;
+  }
+  
+  return desc || "Sem descrição";
+}
+

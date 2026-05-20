@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { ProductGrid } from "@/components/ProductGrid";
 import { useProcessStore } from "@/stores/processStore";
+import { resolveDescription } from "@/lib/googleSheets";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer, CheckCircle, FileSpreadsheet, FileText } from "lucide-react";
 import { utils, writeFile } from "xlsx";
@@ -37,8 +38,43 @@ const statusOptions = [
 export default function ProcessDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { processes, updateProcess } = useProcessStore();
+  const { processes, updateProcess, fetchProcesses, isLoading, updateProduct, productDatabase: catalog } = useProcessStore();
   const process = processes.find((p) => p.id === id);
+
+  // Call fetchProcesses if processes are empty (page refresh case)
+  React.useEffect(() => {
+    if (processes.length === 0) {
+      fetchProcesses();
+    }
+  }, [processes.length, fetchProcesses]);
+
+  // Background correction for product descriptions
+  React.useEffect(() => {
+    if (!process || Object.keys(catalog).length === 0) return;
+    
+    let updatedAny = false;
+    process.products.forEach((prod) => {
+      const desc = prod.description?.trim();
+      const hasNoDescription = 
+        !desc || 
+        desc === "Importado" || 
+        desc === "Sem descrição" || 
+        desc === "Sem descriï¿½ï¿½o" || 
+        desc === "Sem descrio";
+        
+      if (hasNoDescription) {
+        const fallback = resolveDescription(prod.description, prod.code, catalog);
+        if (fallback && fallback !== "Sem descrição" && fallback !== "Importado") {
+          updateProduct(process.id, prod.id, { description: fallback });
+          updatedAny = true;
+        }
+      }
+    });
+    
+    if (updatedAny) {
+      toast.success("Descrições dos produtos atualizadas a partir do Google Sheets!");
+    }
+  }, [process, catalog, updateProduct]);
 
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
@@ -112,7 +148,10 @@ export default function ProcessDetail() {
                 ${p.products.map(prod => `
                   <tr>
                     ${activeCols.map(c => {
-                      const val = (prod as any)[c.id];
+                      let val = (prod as any)[c.id];
+                      if (c.id === 'description') {
+                        val = resolveDescription(prod.description, prod.code, catalog);
+                      }
                       const isNum = typeof val === 'number';
                       const isCode = c.id === 'code';
                       return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;
@@ -166,7 +205,11 @@ export default function ProcessDetail() {
     const data = process.products.map(prod => {
       const row: any = {};
       activeCols.forEach(col => {
-        row[col.label] = (prod as any)[col.id] || "";
+        let val = (prod as any)[col.id];
+        if (col.id === 'description') {
+          val = resolveDescription(prod.description, prod.code, catalog);
+        }
+        row[col.label] = val || "";
       });
       return row;
     });
@@ -255,7 +298,10 @@ export default function ProcessDetail() {
               ${p.products.map(prod => `
                 <tr>
                   ${activeCols.map(c => {
-                    const val = (prod as any)[c.id];
+                    let val = (prod as any)[c.id];
+                    if (c.id === 'description') {
+                      val = resolveDescription(prod.description, prod.code, catalog);
+                    }
                     const isNum = typeof val === 'number';
                     const isCode = c.id === 'code';
                     return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;
@@ -286,6 +332,17 @@ export default function ProcessDetail() {
     printWindow.print();
   };
 
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <span className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mb-3"></span>
+          Carregando processo...
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!process) {
     return (

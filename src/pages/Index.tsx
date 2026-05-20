@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useProcessStore } from "@/stores/processStore";
+import { resolveDescription } from "@/lib/googleSheets";
 import { AppLayout } from "@/components/AppLayout";
 import { ProcessCard } from "@/components/ProcessCard";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ const PRINT_COLUMNS = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { processes, fetchProcesses, isLoading, deleteProcess } = useProcessStore();
+  const { processes, fetchProcesses, isLoading, deleteProcess, productDatabase: catalog } = useProcessStore();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
@@ -70,7 +71,7 @@ export default function Dashboard() {
         p.code.toUpperCase().includes(q) || 
         p.name.toUpperCase().includes(q) ||
         (p.cliente && p.cliente.toUpperCase().includes(q)) ||
-        p.products.some(prod => prod.code.toUpperCase().includes(q) || prod.description.toUpperCase().includes(q));
+        p.products.some(prod => prod.code.toUpperCase().includes(q) || resolveDescription(prod.description, prod.code, catalog).toUpperCase().includes(q));
       const processDate = new Date(p.date);
       const matchesFrom = !dateRange.from || processDate >= dateRange.from;
       const matchesTo = !dateRange.to || processDate <= dateRange.to;
@@ -83,7 +84,7 @@ export default function Dashboard() {
 
       return matchesSearch && matchesFrom && matchesTo && matchesQuickFilter;
     });
-  }, [processes, search, dateRange, quickFilter]);
+  }, [processes, search, dateRange, quickFilter, catalog]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -146,7 +147,10 @@ export default function Dashboard() {
                 ${p.products.map(prod => `
                   <tr>
                     ${activeCols.map(c => {
-                      const val = (prod as any)[c.id];
+                      let val = (prod as any)[c.id];
+                      if (c.id === 'description') {
+                        val = resolveDescription(prod.description, prod.code, catalog);
+                      }
                       const isNum = typeof val === 'number';
                       const isCode = c.id === 'code';
                       return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;
@@ -216,7 +220,11 @@ export default function Dashboard() {
       p.products.forEach(prod => {
         const row: any = {};
         activeCols.forEach(col => {
-          row[col.label] = (prod as any)[col.id] || "";
+          let val = (prod as any)[col.id];
+          if (col.id === 'description') {
+            val = resolveDescription(prod.description, prod.code, catalog);
+          }
+          row[col.label] = val || "";
         });
         allData.push(row);
       });
@@ -322,7 +330,10 @@ export default function Dashboard() {
               ${p.products.map(prod => `
                 <tr>
                   ${activeCols.map(c => {
-                    const val = (prod as any)[c.id];
+                    let val = (prod as any)[c.id];
+                    if (c.id === 'description') {
+                      val = resolveDescription(prod.description, prod.code, catalog);
+                    }
                     const isNum = typeof val === 'number';
                     const isCode = c.id === 'code';
                     return `<td class="${isNum ? 'num' : ''} ${isCode ? 'code' : ''}" ${isNum && (c.id === 'qtyUnit' || c.id === 'qtyBoxes') ? 'style="font-weight:bold;"' : ''}>${val || "—"}</td>`;

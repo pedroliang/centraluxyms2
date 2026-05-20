@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
+import { resolveDescription } from "@/lib/googleSheets";
 import { SmartCodeInput } from "./SmartCodeInput";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit3, Check, FileUp, Image as ImageIcon, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
@@ -18,7 +19,7 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ processId, products }: ProductGridProps) {
-  const { addProduct, updateProduct, removeProduct } = useProcessStore();
+  const { addProduct, updateProduct, removeProduct, productDatabase: catalog } = useProcessStore();
   
   // New product form
   const [code, setCode] = useState("");
@@ -62,6 +63,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     if (!file) return;
     
     setIsProcessing(true);
+    const catalog = useProcessStore.getState().productDatabase;
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
@@ -76,7 +78,8 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           const code = (row["Código"] || row["Codigo"] || row["code"] || "").toString().trim();
           if (!code) continue;
           
-          const description = row["Descrição"] || row["Descricao"] || row["description"] || "Importado";
+          const excelDesc = row["Descrição"] || row["Descricao"] || row["description"];
+          const description = resolveDescription(excelDesc, code, catalog);
           
           const qtyUnit = Number(row["Q.Unit"] || row["Qtd Total"] || row["Quantidade"] || 0);
           const qtyUnitSP = Number(row["Unt.SP"] || row["Unt. SP"] || 0);
@@ -580,16 +583,16 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                 >
                   <td className="px-3 py-2.5 text-center text-[11px] font-medium text-muted-foreground tabular-nums">{originalIndexMap.get(prod.id)}</td>
                   <td className="px-4 py-2.5 font-mono font-semibold text-foreground">{prod.code}</td>
-                  <td className="px-4 py-2.5 text-foreground max-w-[150px] truncate" title={prod.description}>
+                  <td className="px-4 py-2.5 text-foreground max-w-[150px] truncate" title={resolveDescription(prod.description, prod.code, catalog)}>
                     {editingId === prod.id ? (
                       <input
                         type="text"
-                        defaultValue={prod.description}
+                        defaultValue={resolveDescription(prod.description, prod.code, catalog)}
                         onBlur={(e) => updateProduct(processId, prod.id, { description: e.target.value, isOverridden: true })}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setEditingId(null); }}
                         className="w-full rounded border border-input bg-background px-1 py-0.5 text-sm"
                       />
-                    ) : prod.description}
+                    ) : resolveDescription(prod.description, prod.code, catalog)}
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium">
                     {editingId === prod.id ? (
