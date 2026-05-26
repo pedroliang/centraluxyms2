@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
-import { resolveDescription } from "@/lib/googleSheets";
+import { resolveDescription, getFallbackProduct } from "@/lib/googleSheets";
 import { SmartCodeInput } from "./SmartCodeInput";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit3, Check, FileUp, Image as ImageIcon, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
@@ -64,6 +64,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
     
     setIsProcessing(true);
     const catalog = useProcessStore.getState().productDatabase;
+    const process = useProcessStore.getState().processes.find(p => p.id === processId);
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
@@ -78,19 +79,53 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           const code = (row["Código"] || row["Codigo"] || row["code"] || "").toString().trim();
           if (!code) continue;
           
+          const dbItem = getFallbackProduct(code, catalog);
           const excelDesc = row["Descrição"] || row["Descricao"] || row["description"];
           const description = resolveDescription(excelDesc, code, catalog);
           
           const qtyUnit = Number(row["Q.Unit"] || row["Qtd Total"] || row["Quantidade"] || 0);
-          const qtyUnitSP = Number(row["Unt.SP"] || row["Unt. SP"] || 0);
-          const qtyUnitDF = Number(row["Unt.DF"] || row["Unt. DF"] || 0);
+          let qtyUnitSP = Number(row["Unt.SP"] || row["Unt. SP"] || 0);
+          let qtyUnitDF = Number(row["Unt.DF"] || row["Unt. DF"] || 0);
           
-          const qtyBoxes = Number(row["Caixas"] || row["Total Caixas"] || 0);
-          const qtyBoxesSP = Number(row["Cx.SP"] || row["Cx. SP"] || 0);
-          const qtyBoxesDF = Number(row["Cx.DF"] || row["Cx. DF"] || 0);
+          // Se a quantidade total foi informada mas não foi direcionada para SP ou DF,
+          // direciona com base no destino do processo.
+          if (qtyUnit > 0 && qtyUnitSP === 0 && qtyUnitDF === 0) {
+            const dest = (process?.destination || "").toUpperCase();
+            if (dest.includes("BRASÍLIA") || dest.includes("DF")) {
+              qtyUnitDF = qtyUnit;
+            } else if (dest.includes("SÃO PAULO") || dest.includes("SP") || dest.includes("JUNDIAÍ") || dest.includes("EXTREMA")) {
+              qtyUnitSP = qtyUnit;
+            } else {
+              qtyUnitDF = qtyUnit;
+            }
+          }
           
-          const qtyPerBox = Number(row["Q/Cx"] || row["Qtd/Cx"] || row["Por Caixa"] || 0);
-          const lote = row["Lote"] || row["Batch"] || "";
+          let qtyPerBox = Number(row["Q/Cx"] || row["Qtd/Cx"] || row["Por Caixa"] || 0);
+          if (qtyPerBox === 0 && dbItem && dbItem.qtyPerBox) {
+            qtyPerBox = dbItem.qtyPerBox;
+          }
+          
+          let qtyBoxes = Number(row["Caixas"] || row["Total Caixas"] || 0);
+          let qtyBoxesSP = Number(row["Cx.SP"] || row["Cx. SP"] || 0);
+          let qtyBoxesDF = Number(row["Cx.DF"] || row["Cx. DF"] || 0);
+          
+          if (qtyPerBox > 0) {
+            if (qtyBoxes === 0 && qtyUnit > 0) {
+              qtyBoxes = Number((qtyUnit / qtyPerBox).toFixed(4));
+            }
+            if (qtyBoxesSP === 0 && qtyUnitSP > 0) {
+              qtyBoxesSP = Number((qtyUnitSP / qtyPerBox).toFixed(4));
+            }
+            if (qtyBoxesDF === 0 && qtyUnitDF > 0) {
+              qtyBoxesDF = Number((qtyUnitDF / qtyPerBox).toFixed(4));
+            }
+          }
+          
+          let lote = row["Lote"] || row["Batch"] || "";
+          if (!lote && dbItem && dbItem.lote) {
+            lote = dbItem.lote;
+          }
+          
           const volumeRaw = row["Vol."] || row["Volume"] || row["Vol"] || 0;
           const volume = typeof volumeRaw === "string" ? parseFloat(volumeRaw.replace(",", ".")) : Number(volumeRaw);
           
@@ -119,7 +154,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
             qtyUnitDF: qtyUnitDF || undefined,
             qtyBoxesSP: qtyBoxesSP || undefined,
             qtyBoxesDF: qtyBoxesDF || undefined,
-            isManual: true,
+            isManual: !dbItem,
             isOverridden: false,
             lote: lote || undefined,
             cubagem: volume > 0 ? {
@@ -165,6 +200,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
       
       // Get product catalog to attempt auto-description
       const catalog = useProcessStore.getState().productDatabase;
+      const process = useProcessStore.getState().processes.find(p => p.id === processId);
       
       lines.forEach(line => {
         // Look for codes (3+ digits)
@@ -190,18 +226,48 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
             }
           }
           
-          // Find description in catalog if possible (catalog is a Record<string, Entry>)
-          const dbItem = catalog[code];
+          // Find description in catalog if possible
+          const dbItem = getFallbackProduct(code, catalog);
+          const description = resolveDescription("", code, catalog);
+          const qtyPerBox = dbItem?.qtyPerBox || 0;
+          const lote = dbItem?.lote || undefined;
+          
+          let qtyBoxes = 0;
+          if (qtyPerBox > 0) {
+            qtyBoxes = Number((qty / qtyPerBox).toFixed(4));
+          }
+          
+          let qtyUnitSP = 0;
+          let qtyUnitDF = 0;
+          let qtyBoxesSP = 0;
+          let qtyBoxesDF = 0;
+          
+          const dest = (process?.destination || "").toUpperCase();
+          if (dest.includes("BRASÍLIA") || dest.includes("DF")) {
+            qtyUnitDF = qty;
+            if (qtyPerBox > 0) qtyBoxesDF = qtyBoxes;
+          } else if (dest.includes("SÃO PAULO") || dest.includes("SP") || dest.includes("JUNDIAÍ") || dest.includes("EXTREMA")) {
+            qtyUnitSP = qty;
+            if (qtyPerBox > 0) qtyBoxesSP = qtyBoxes;
+          } else {
+            qtyUnitDF = qty;
+            if (qtyPerBox > 0) qtyBoxesDF = qtyBoxes;
+          }
           
           const newProd: Product = {
             id: crypto.randomUUID(),
             code,
-            description: dbItem?.description || "",
+            description,
             qtyUnit: qty,
-            qtyBoxes: 0,
-            qtyPerBox: 0,
-            isManual: true,
-            isOverridden: false
+            qtyBoxes,
+            qtyPerBox,
+            qtyUnitSP: qtyUnitSP || undefined,
+            qtyUnitDF: qtyUnitDF || undefined,
+            qtyBoxesSP: qtyBoxesSP || undefined,
+            qtyBoxesDF: qtyBoxesDF || undefined,
+            isManual: !dbItem,
+            isOverridden: false,
+            lote
           };
           addProduct(processId, newProd);
           foundCount++;

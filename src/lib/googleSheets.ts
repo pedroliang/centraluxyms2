@@ -80,44 +80,55 @@ export async function fetchGoogleSheetProducts(): Promise<Record<string, Product
 }
 
 /**
- * Normaliza e busca a descrição de um código de produto no catálogo do Google Sheets.
+ * Normaliza e busca a entrada de produto completa de um código no catálogo do Google Sheets.
  * Trata variações como sufixos entre parênteses, espaços ou letras extras.
  */
-export function getFallbackDescription(
+export function getFallbackProduct(
   code: string,
-  catalog: Record<string, { description: string }>
-): string | null {
+  catalog: Record<string, ProductDBEntry>
+): ProductDBEntry | null {
   if (!catalog || !code) return null;
   
   const upperCode = code.trim().toUpperCase();
   
   // 1. Busca direta (ex: "7349")
-  if (catalog[upperCode]?.description) {
-    return catalog[upperCode].description;
+  if (catalog[upperCode]) {
+    return catalog[upperCode];
   }
   
   // 2. Remove parênteses e conteúdo dentro, ex: "7349 (D)" ou "7349 (H)" -> "7349"
   const withoutParentheses = upperCode.replace(/\s*\(.*\)/g, "").trim();
-  if (catalog[withoutParentheses]?.description) {
-    return catalog[withoutParentheses].description;
+  if (catalog[withoutParentheses]) {
+    return catalog[withoutParentheses];
   }
   
   // 3. Pega apenas a primeira palavra/token, ex: "7349 D" -> "7349"
   const firstWord = upperCode.split(/\s+/)[0].trim();
-  if (catalog[firstWord]?.description) {
-    return catalog[firstWord].description;
+  if (catalog[firstWord]) {
+    return catalog[firstWord];
   }
   
   // 4. Remove uma única letra no final de código numérico, ex: "7349D" -> "7349"
   const numericMatch = upperCode.match(/^(\d+)[A-Z]$/);
   if (numericMatch) {
     const baseCode = numericMatch[1];
-    if (catalog[baseCode]?.description) {
-      return catalog[baseCode].description;
+    if (catalog[baseCode]) {
+      return catalog[baseCode];
     }
   }
   
   return null;
+}
+
+/**
+ * Normaliza e busca a descrição de um código de produto no catálogo do Google Sheets.
+ */
+export function getFallbackDescription(
+  code: string,
+  catalog: Record<string, ProductDBEntry>
+): string | null {
+  const prod = getFallbackProduct(code, catalog);
+  return prod ? prod.description : null;
 }
 
 /**
@@ -127,7 +138,7 @@ export function getFallbackDescription(
 export function resolveDescription(
   currentDescription: string | undefined,
   code: string,
-  catalog: Record<string, { description: string }>
+  catalog: Record<string, ProductDBEntry>
 ): string {
   const desc = currentDescription?.trim();
   const hasNoDescription = 
