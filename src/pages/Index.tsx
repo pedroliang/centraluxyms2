@@ -50,8 +50,24 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [quickFilter, setQuickFilter] = useState<{ type: "origin" | "destination"; value: string } | null>(null);
+
+  // Execute deletion when confirmDelete flag is set
+  useEffect(() => {
+    if (!confirmDelete || selectedIds.length === 0) return;
+    const idsToDelete = [...selectedIds];
+    setConfirmDelete(false);
+    
+    (async () => {
+      console.log("[Index] Deleting processes:", idsToDelete);
+      for (const id of idsToDelete) {
+        await deleteProcess(id);
+      }
+      setSelectedIds([]);
+    })();
+  }, [confirmDelete, selectedIds, deleteProcess]);
 
   // Print Config State
   const [printConfigOpen, setPrintConfigOpen] = useState(false);
@@ -659,17 +675,13 @@ export default function Dashboard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={async () => {
-                for (const id of selectedIds) {
-                  await deleteProcess(id);
-                }
-                setSelectedIds([]);
-                setIsDeleteOpen(false);
-                toast.success("Processo(s) excluído(s) com sucesso!");
+              onClick={() => {
+                console.log("[Index] Confirm delete clicked, selectedIds:", selectedIds);
+                setConfirmDelete(true);
               }}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              Confirmar
+              Confirmar Exclusão
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

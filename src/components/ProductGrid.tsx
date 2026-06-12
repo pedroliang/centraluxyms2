@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Product } from "@/types/process";
 import { useProcessStore } from "@/stores/processStore";
 import { resolveDescription, getFallbackProduct } from "@/lib/googleSheets";
@@ -46,6 +46,20 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [autoFilled, setAutoFilled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [confirmProductDelete, setConfirmProductDelete] = useState(false);
+
+  // Execute product deletion when confirmProductDelete flag is set
+  useEffect(() => {
+    if (!confirmProductDelete || !productToDelete) return;
+    const prodToRemove = productToDelete;
+    setConfirmProductDelete(false);
+    setProductToDelete(null);
+    
+    (async () => {
+      console.log("[ProductGrid] Deleting product:", prodToRemove.id, prodToRemove.code);
+      await removeProduct(processId, prodToRemove.id);
+    })();
+  }, [confirmProductDelete, productToDelete, processId, removeProduct]);
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -793,16 +807,13 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={async () => {
-                if (productToDelete) {
-                  await removeProduct(processId, productToDelete.id);
-                  toast.success("Item removido com sucesso!");
-                  setProductToDelete(null);
-                }
+              onClick={() => {
+                console.log("[ProductGrid] Confirm delete clicked for:", productToDelete?.code);
+                setConfirmProductDelete(true);
               }}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              Confirmar
+              Confirmar Exclusão
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

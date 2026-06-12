@@ -132,11 +132,20 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
   deleteProcess: async (id) => {
     set((state) => ({ processes: state.processes.filter((p) => p.id !== id) }));
     
-    // As in db we have ON DELETE CASCADE for products
-    const { error } = await supabase.from("processes").delete().match({ id });
-    if (error) {
-      toast.error("Erro ao remover: " + error.message);
-      get().fetchProcesses();
+    try {
+      // As in db we have ON DELETE CASCADE for products
+      const { error } = await supabase.from("processes").delete().eq("id", id);
+      if (error) {
+        console.error("[deleteProcess] Supabase error:", error);
+        toast.error("Erro ao remover processo: " + error.message);
+        get().fetchProcesses(); // Rollback
+      } else {
+        toast.success("Processo removido com sucesso!");
+      }
+    } catch (err) {
+      console.error("[deleteProcess] Unexpected error:", err);
+      toast.error("Erro inesperado ao remover processo.");
+      get().fetchProcesses(); // Rollback
     }
   },
 
@@ -210,10 +219,19 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       ),
     }));
 
-    const { error } = await supabase.from("products").delete().match({ id: productId });
-    if (error) {
-      toast.error("Erro ao remover produto: " + error.message);
-      get().fetchProcesses();
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) {
+        console.error("[removeProduct] Supabase error:", error);
+        toast.error("Erro ao remover produto: " + error.message);
+        get().fetchProcesses(); // Rollback
+      } else {
+        toast.success("Item removido com sucesso!");
+      }
+    } catch (err) {
+      console.error("[removeProduct] Unexpected error:", err);
+      toast.error("Erro inesperado ao remover item.");
+      get().fetchProcesses(); // Rollback
     }
   },
 }));
