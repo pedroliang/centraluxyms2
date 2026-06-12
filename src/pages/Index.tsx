@@ -9,6 +9,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, CalendarIcon, Printer, Package, FileText, Loader2, Trash2, Edit, FileSpreadsheet, Database } from "lucide-react";
@@ -39,6 +49,7 @@ export default function Dashboard() {
   const { processes, fetchProcesses, isLoading, deleteProcess, productDatabase: catalog } = useProcessStore();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [quickFilter, setQuickFilter] = useState<{ type: "origin" | "destination"; value: string } | null>(null);
 
@@ -365,13 +376,8 @@ export default function Dashboard() {
     printWindow.print();
   };
 
-  const handleDeleteSelected = async () => {
-    if (window.confirm(`Tem certeza que deseja excluir ${selectedIds.length} processo(s)?`)) {
-      for (const id of selectedIds) {
-        await deleteProcess(id);
-      }
-      setSelectedIds([]);
-    }
+  const handleDeleteSelected = () => {
+    setIsDeleteOpen(true);
   };
 
   const dateLabel = () => {
@@ -641,6 +647,33 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Processo(s)</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selectedIds.length} processo(s)? Esta ação não pode ser desfeita e removerá permanentemente os processos e todos os itens vinculados a eles.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                for (const id of selectedIds) {
+                  await deleteProcess(id);
+                }
+                setSelectedIds([]);
+                setIsDeleteOpen(false);
+                toast.success("Processo(s) excluído(s) com sucesso!");
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

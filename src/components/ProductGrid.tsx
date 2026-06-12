@@ -9,6 +9,16 @@ import * as XLSX from "xlsx";
 import { createWorker } from "tesseract.js";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SortDirection = "asc" | "desc" | null;
 type SortField = "item" | "code" | "description" | "qtyUnit" | "qtyUnitSP" | "qtyUnitDF" | "qtyBoxes" | "qtyBoxesSP" | "qtyBoxesDF" | "qtyPerBox" | "lote";
@@ -35,6 +45,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
   const [isManual, setIsManual] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -740,11 +751,7 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
                         {editingId === prod.id ? <Check className="h-3.5 w-3.5" /> : <Edit3 className="h-3.5 w-3.5" />}
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm("Tem certeza que deseja excluir este item?")) {
-                            removeProduct(processId, prod.id);
-                          }
-                        }}
+                        onClick={() => setProductToDelete(prod)}
                         className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                         title="Excluir produto"
                       >
@@ -773,6 +780,33 @@ export function ProductGrid({ processId, products }: ProductGridProps) {
           </table>
         </div>
       )}
+
+      {/* Alert Dialog for product deletion confirmation */}
+      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o item &ldquo;{productToDelete?.code} - {productToDelete ? resolveDescription(productToDelete.description, productToDelete.code, catalog) : ''}&rdquo;? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                if (productToDelete) {
+                  await removeProduct(processId, productToDelete.id);
+                  toast.success("Item removido com sucesso!");
+                  setProductToDelete(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
